@@ -2,6 +2,11 @@
 
 Manual-brew companion and specialty coffee knowledge engine. See [PRD.md](PRD.md).
 
+**Live: https://mujibra.github.io/brew-generator/**
+
+Installable as a PWA and works fully offline. Everything is stored in your own
+browser — no account, no server, nothing leaves the device.
+
 ```bash
 npm install
 npm run dev

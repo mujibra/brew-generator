@@ -44,8 +44,12 @@ for (const file of files) {
   if (SKIP.some((re) => re.test(rel))) continue
   const { size } = await stat(file)
   bytes += size
-  // Directory-style URLs: /brew/index.html is served as /brew/
-  const path = rel.endsWith('/index.html') ? rel.slice(0, -'index.html'.length) : rel
+  // Directory-style URLs: /brew/index.html is served as /brew/.
+  // The root file is bare `index.html` with no directory prefix, so it needs
+  // its own case — miss it and the entry point is absent from the precache,
+  // which only shows up as a failure on a genuinely cold offline load.
+  const isIndex = rel === 'index.html' || rel.endsWith('/index.html')
+  const path = isIndex ? rel.slice(0, -'index.html'.length) : rel
   // Encode the path. Dynamic-route chunks live in directories like
   // `app/brew/[recipeId]/`, and webpack requests them as `%5BrecipeId%5D`.
   // Caching the raw bracket form means the cache never matches and the page

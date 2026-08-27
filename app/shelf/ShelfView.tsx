@@ -46,11 +46,9 @@ export function ShelfView() {
   }, [])
 
   const now = Date.now()
-  const shelf = useMemo(
-    () => summariseShelf(beans ?? [], now, TYPICAL_DOSE_G),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [beans],
-  )
+  // Date.now() lives inside the memo: as a dependency it would change every
+  // render and defeat the point of memoising.
+  const shelf = useMemo(() => summariseShelf(beans ?? [], Date.now(), TYPICAL_DOSE_G), [beans])
 
   async function save(bean: BeanRecord) {
     await repository().beans.put(bean)

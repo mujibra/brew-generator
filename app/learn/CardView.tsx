@@ -130,21 +130,36 @@ export function CardView({ card }: { card: Card }) {
  * and finite. A markdown library would be more code than this and would drag a
  * parser into the bundle for three constructs.
  */
+/**
+ * Stable, unique keys from content plus character offset.
+ *
+ * Never the array index: two blocks can hold identical text, so content alone
+ * is not unique, and an index alone is not stable.
+ */
+function keyed(parts: string[]): { key: string; text: string }[] {
+  let offset = 0
+  return parts.map((text) => {
+    const key = `${offset}:${text.slice(0, 24)}`
+    offset += text.length
+    return { key, text }
+  })
+}
+
 function Prose({ text }: { text: string }) {
-  const blocks = text.trim().split(/\n\s*\n/)
+  const blocks = keyed(text.trim().split(/\n\s*\n/))
 
   return (
     <div className="mt-6 space-y-4">
-      {blocks.map((block, i) => {
+      {blocks.map(({ key, text: block }) => {
         const lines = block.split('\n').map((l) => l.trim())
 
         if (lines.every((l) => l.startsWith('|'))) {
-          return <Table key={i} lines={lines} />
+          return <Table key={key} lines={lines} />
         }
 
         if (lines.every((l) => l.startsWith('- '))) {
           return (
-            <ul key={i} className="ml-1 space-y-2">
+            <ul key={key} className="ml-1 space-y-2">
               {lines.map((l) => (
                 <li key={l} className="flex gap-2">
                   <span className="text-[var(--color-accent)]">·</span>
@@ -161,7 +176,7 @@ function Prose({ text }: { text: string }) {
         if (block.startsWith('    ')) {
           return (
             <pre
-              key={i}
+              key={key}
               className="overflow-x-auto rounded-xl bg-[var(--color-raised)] p-4 text-sm"
             >
               <code>{block.replace(/^ {4}/gm, '')}</code>
@@ -170,7 +185,7 @@ function Prose({ text }: { text: string }) {
         }
 
         return (
-          <p key={i} className="leading-relaxed">
+          <p key={key} className="leading-relaxed">
             <Inline text={block.replace(/\n/g, ' ')} />
           </p>
         )
@@ -221,16 +236,15 @@ function Table({ lines }: { lines: string[] }) {
 
 /** Bold only. The bodies use nothing else inline. */
 function Inline({ text }: { text: string }) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g)
   return (
     <>
-      {parts.map((part, i) =>
+      {keyed(text.split(/(\*\*[^*]+\*\*)/g)).map(({ key, text: part }) =>
         part.startsWith('**') && part.endsWith('**') ? (
-          <strong key={i} className="font-semibold">
+          <strong key={key} className="font-semibold">
             {part.slice(2, -2)}
           </strong>
         ) : (
-          <span key={i}>{part}</span>
+          <span key={key}>{part}</span>
         ),
       )}
     </>

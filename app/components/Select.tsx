@@ -86,9 +86,8 @@ export function Select({
   // Keep the active option in view when moving by keyboard.
   useEffect(() => {
     if (!open) return
-    listRef.current?.querySelector<HTMLElement>('[data-active="true"]')?.scrollIntoView({
-      block: 'nearest',
-    })
+    const row = listRef.current?.children[active]
+    if (row instanceof HTMLElement) row.scrollIntoView({ block: 'nearest' })
   }, [open, active])
 
   function onKeyDown(e: React.KeyboardEvent) {
@@ -142,6 +141,7 @@ export function Select({
         aria-controls={listId}
         aria-haspopup="listbox"
         aria-label={label}
+        aria-activedescendant={open ? `${listId}-${active}` : undefined}
         onClick={() => (open ? setOpen(false) : openList())}
         onKeyDown={onKeyDown}
         className={`flex w-full items-center justify-between gap-3 rounded-2xl border bg-[var(--color-surface)] px-4 text-left ${
@@ -164,6 +164,8 @@ export function Select({
       </button>
 
       {open && (
+        /* The WAI-ARIA listbox pattern: roles live on ul/li, focus stays on the
+           combobox, and aria-activedescendant announces the active row. */
         <ul
           ref={listRef}
           id={listId}
@@ -176,36 +178,35 @@ export function Select({
             const isSelected = option.value === value
             const isActive = i === active
             return (
-              <li key={option.value}>
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard is handled on the combobox, per the listbox pattern. */}
-                <div
-                  role="option"
-                  aria-selected={isSelected}
-                  data-active={isActive}
-                  onClick={() => commit(i)}
-                  onMouseEnter={() => setActive(i)}
-                  className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 ${
-                    compact ? 'compact' : ''
-                  } ${isActive ? 'bg-[var(--color-accent-soft)]' : ''}`}
-                >
-                  <span className="min-w-0 flex-1">
-                    <span
-                      className={`block truncate ${isSelected ? 'font-semibold text-[var(--color-accent)]' : ''}`}
-                    >
-                      {option.label}
-                    </span>
-                    {option.hint && (
-                      <span className="block truncate text-xs text-[var(--color-faint)]">
-                        {option.hint}
-                      </span>
-                    )}
+              // biome-ignore lint/a11y/useKeyWithClickEvents: keys are handled on the combobox, which is where focus stays in this pattern.
+              <li
+                key={option.value}
+                id={`${listId}-${i}`}
+                role="option"
+                aria-selected={isSelected}
+                onClick={() => commit(i)}
+                onMouseEnter={() => setActive(i)}
+                className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 ${
+                  compact ? 'compact' : ''
+                } ${isActive ? 'bg-[var(--color-accent-soft)]' : ''}`}
+              >
+                <span className="min-w-0 flex-1">
+                  <span
+                    className={`block truncate ${isSelected ? 'font-semibold text-[var(--color-accent)]' : ''}`}
+                  >
+                    {option.label}
                   </span>
-                  {isSelected && (
-                    <span aria-hidden="true" className="shrink-0 text-[var(--color-accent)]">
-                      ✓
+                  {option.hint && (
+                    <span className="block truncate text-xs text-[var(--color-faint)]">
+                      {option.hint}
                     </span>
                   )}
-                </div>
+                </span>
+                {isSelected && (
+                  <span aria-hidden="true" className="shrink-0 text-[var(--color-accent)]">
+                    ✓
+                  </span>
+                )}
               </li>
             )
           })}

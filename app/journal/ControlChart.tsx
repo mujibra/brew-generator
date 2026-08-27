@@ -197,6 +197,7 @@ export function ControlChart({
         {points.map((p) => {
           const selected = p.id === selectedId
           return (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: a shortcut, not the only path — the brew list below the chart reaches every point by keyboard.
             <circle
               key={p.id}
               cx={x(p.eyPct)}

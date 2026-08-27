@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Extraction">
+  <rect width="512" height="512" fill="#1a1614"/>
+  <!-- Maskable: artwork kept inside the 80% safe zone. -->
+  <path d="M166 172h180l-72 148a22 22 0 0 1-36 0z" fill="none" stroke="#e08b4a" stroke-width="20" stroke-linejoin="round"/>
+  <path d="M204 252h104l-28 58a16 16 0 0 1-48 0z" fill="#e08b4a" opacity="0.85"/>
+  <circle cx="256" cy="372" r="20" fill="#e08b4a"/>
+</svg>

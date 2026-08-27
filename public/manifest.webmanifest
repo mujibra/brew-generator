@@ -1,0 +1,16 @@
+{
+  "name": "Extraction — manual brew companion",
+  "short_name": "Extraction",
+  "description": "Guided manual brewing, a brew log that reads itself, and a referenced specialty coffee knowledge base.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1b1809",
+  "theme_color": "#1b1809",
+  "categories": ["food", "lifestyle", "utilities"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

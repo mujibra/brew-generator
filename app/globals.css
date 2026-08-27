@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+/*
+ * Palette. Four given colours, plus the steps derived between them:
+ *
+ *   #2E2910  dark roasted brown — surfaces
+ *   #2C5745  deep green        — positive states
+ *   #EBE3A7  pale cream        — text
+ *   #EB7D00  orange            — accent, the one interactive colour
+ *
+ * Dark by default: dawn brewing is the common case (PRD 13.1).
+ */
+@theme {
+  /* Neutrals, walked down and up from #2E2910 so everything shares its warmth. */
+  --color-bg: #1b1809;
+  --color-surface: #2e2910;
+  --color-raised: #3d3617;
+  --color-line: #4d4522;
+  --color-line-strong: #6b6132;
+
+  /* Text, stepped down from #EBE3A7. */
+  --color-ink: #ebe3a7;
+  --color-muted: #b3ac7d;
+  --color-faint: #99926b;
+
+  /* Orange is the only interactive colour, so it always means "you can act". */
+  --color-accent: #eb7d00;
+  --color-accent-soft: #6b3a06;
+  --color-on-accent: #1b1809;
+
+  /* Green means the coffee is where you want it. */
+  --color-good: #2c5745;
+  --color-good-ink: #7cc0a1;
+
+  /* Attention. Warm enough to belong, distinct enough from the accent. */
+  --color-warn: #e0b33a;
+
+  /*
+   * Destructive only. Deliberately outside the four-colour palette: deleting
+   * must never look like the orange call to action.
+   */
+  --color-danger: #e5744e;
+}
+
+html {
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Wet hands, one-handed use: never let a mis-tap select text. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* PRD 13.1: every interactive target is at least 48px. */
+button,
+[role="button"],
+[role="radio"],
+[role="combobox"],
+[role="option"],
+a.tap,
+select,
+input {
+  min-height: 48px;
+}
+
+/* Inputs inside a compact row set their own height. */
+.compact,
+.compact input,
+.compact button,
+.compact [role="option"] {
+  min-height: 40px;
+}
+
+/* Visible keyboard focus everywhere, never a removed outline. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* Pressed feedback: real, immediate, and cheap. */
+button:active:not(:disabled),
+[role="radio"]:active,
+[role="combobox"]:active {
+  transform: translateY(1px);
+}
+
+/* Number inputs: no spinners, they are useless on touch and misfire on desktop. */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Range inputs, themed — the default track is grey and clashes badly. */
+input[type="range"] {
+  appearance: none;
+  height: 44px;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-line);
+}
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  margin-top: -9px;
+  height: 24px;
+  width: 24px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  border: 3px solid var(--color-bg);
+}
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-line);
+}
+input[type="range"]::-moz-range-thumb {
+  height: 24px;
+  width: 24px;
+  border: 3px solid var(--color-bg);
+  border-radius: 999px;
+  background: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  button:active:not(:disabled),
+  [role="radio"]:active,
+  [role="combobox"]:active {
+    transform: none;
+  }
+}

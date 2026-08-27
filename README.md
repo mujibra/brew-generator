@@ -1,0 +1,179 @@
+# Extraction
+
+Manual-brew companion and specialty coffee knowledge engine. See [PRD.md](PRD.md).
+
+```bash
+npm install
+npm run dev
+```
+
+| Command | Does |
+| --- | --- |
+| `npm run dev` | Dev server |
+| `npm run build` | Static export into `out/` |
+| `npm test` | Vitest — the calculators and the dial-in engine |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run format` | Biome check and write |
+
+## Offline
+
+`npm run build` runs `next build` then `scripts/build-sw.mjs`, which walks `out/`
+and bakes the asset list into a generated `out/sw.js`. That means the app is
+offline from first install rather than only after visiting each page.
+
+Asset paths are passed through `encodeURI` on the way into the precache list.
+Dynamic-route chunks live in directories like `app/brew/[recipeId]/` and webpack
+requests them as `%5BrecipeId%5D`; caching the raw bracket form means the cache
+never matches and the page dies on hydration offline.
+
+Caching strategy: `/_next/static/` cache-first (immutable, hashed), navigations
+network-first falling back to cache, everything else stale-while-revalidate.
+
+## Non-negotiable constraints
+
+These exist because the same web build gets wrapped in Capacitor at Phase 2
+(PRD §18). Break one and the native shell becomes a rewrite instead of a wrap.
+
+1. **Static export only.** No route handlers, no middleware, no ISR, no
+   `next/image` optimizer. Sync is a separate API service, never a route handler
+   in this app. `output: 'export'` in `next.config.ts` is load-bearing.
+2. **Storage goes through `lib/db/repository.ts`.** `lib/db/dexie.ts` is the only
+   file allowed to import Dexie. An `import 'dexie'` anywhere else is a bug.
+3. **Device access goes through `lib/capability/`.** Scale, camera, haptics, and
+   wake lock are all behind capability interfaces that report availability, so
+   every surface renders an unavailable state before the shell exists.
+4. **Elapsed time is derived from a persisted timestamp**, never accumulated from
+   ticks. iOS suspends backgrounded JavaScript. See `lib/brew/timer.ts`.
+5. **Routing must work from a `file://`-style origin.** `trailingSlash: true` is
+   set for this reason.
+
+## Layout
+
+```
+app/            routes; /dial-in is the first working surface
+lib/calc/       extraction, scaling, freshness, water — pure, fully tested
+lib/dialin/     hypotheses and rules as data, plus the scoring engine
+lib/gear/       grinder choice, per-brewer baselines, dial-in confirm loop
+lib/learn/      knowledge cards, with editorial rules enforced by tests
+lib/journal/    log analysis, control chart maths, CSV and JSON export
+lib/shelf/      bean records, freshness, dose tracking, per-bag timeline
+lib/recipes/    brewer characteristics, built-in recipes, the recipe generator
+lib/grinders/   grinder registry and micron-to-setting translation
+lib/brew/       step compiler, session state, timestamp-derived timer
+lib/db/         repository interface + the single Dexie implementation
+lib/capability/ device seams and their browser implementations
+```
+
+`lib/calc` and `lib/dialin` have no UI dependency and no I/O. They are the
+product; everything else is chrome around them.
+
+## State
+
+Working:
+
+- **/brew** — five guided recipes with prep steps, live target mass and flow
+  rate, pause/rewind, resume after suspension, and post-brew log capture that
+  writes to IndexedDB.
+- **/brew/build** — generates a full manual from brewer, grinder, roast level,
+  altitude, days off roast and what you want in the cup: pour count, grams per
+  pour, timings, grind and temperature, each with its reasoning attached.
+- **/dial-in** — symptom to one action, in your grinder's own clicks, with the
+  full ranking in expert mode. Prefills the drawdown answer from your last brew,
+  and remembers what you have already tried.
+- **/gear** — your grinder and your own baseline setting per brewer.
+- **/learn** — 18 knowledge cards on extraction, grind, roast, water and tasting,
+  searchable by symptom ("flat", "drying") rather than by jargon. Each has a
+  Quick / Standard / Deep depth toggle, sources, and a confidence label.
+- **/journal** — every logged brew, searchable and filterable, with a brew
+  control chart, a score-weighted personal preference zone, per-recipe averages,
+  inline editing, and CSV/JSON export.
+- **/shelf** — bags with freshness state, remaining dose and brews-left, a
+  per-bag score-against-days-off-roast timeline, low-stock warnings, and
+  archiving with a would-buy-again verdict.
+- **/water** — build brewing water from salts (with a concentrate calculator),
+  blend a hard source down, or diagnose your tap water and get told what to do
+  about it.
+
+The app is an installable PWA and works fully offline: every route and asset is
+precached at build time.
+
+Built and tested with no UI yet: recipe scaling. 265 tests.
+
+Not built: a tools index (F9), saving a generated recipe to a library (F2.2),
+onboarding (13.3), an app-wide depth setting (13.2), grind setting captured on
+the brew log, cupping (F8), the rest of the knowledge base (varieties,
+processing, origins), Bluetooth scale protocol adapters (F10), OCR label
+capture (F5 R1), PNG icons.
+
+## The knowledge base
+
+`lib/learn/cards.ts` holds typed card data rather than the MDX pipeline PRD 11
+specifies — the compiler enforces the schema for free and there is no build
+integration to maintain. The shape is frontmatter-compatible, so moving to MDX
+when a non-developer needs to author cards is mechanical.
+
+The editorial rules are asserted in `cards.test.ts`, not trusted: every card must
+carry a `practicalImplication` and at least one source, summaries are capped at
+two sentences, every `related` id must resolve, no card may be orphaned, and
+**every `mechanismCardId` the dial-in engine cites must exist**. That last test
+is what keeps PRD F4 R6 honest.
+
+Card bodies are rendered by a ~60-line renderer in `CardView.tsx` handling
+paragraphs, bullets, pipe tables, indented formula blocks and bold. The bodies
+are authored in-repo so the formatting they use is finite; a markdown library
+would be more code than the renderer.
+
+## The dial-in confirm loop
+
+The journal is the memory. Dial-in reads attempt history out of `BrewRecord`'s
+`dialInHypothesis` / `dialInOutcome` fields rather than a separate store, so
+deleting a brew correctly forgets its verdict.
+
+The flow: dial-in suggests one change and you tap "I'll try this", which writes a
+`pendingHypothesis` into settings. The next time you log a brew, the log sheet
+asks whether it helped and stamps the verdict onto that brew. Three no-change
+verdicts in a row and the engine excludes that hypothesis and moves on.
+
+Dial-in also infers the drawdown answer from your last brew's actual time against
+its recipe's expected time, so you are not retyping what the log already knows.
+
+## How the pieces connect
+
+The bag is the anchor (PRD 5.3). A bean carries roast level, altitude and roast
+date; the builder reads those to shape a recipe; the brew screen asks which bag
+before the timer starts and shows its profile, freshness and what the brew will
+cost it; the log sheet carries that choice through and decrements the bag; the
+journal and the shelf both read that link back. Days off roast is frozen onto the brew record at save time so editing a
+bag later cannot rewrite history.
+
+Freshness starts from a generic per-roast-level curve and switches to the user's
+own window after six scored brews on that bag — the shelf draws both, so the
+comparison is visible rather than asserted.
+
+## The generator model
+
+`lib/recipes/generate.ts` is additive offsets on a per-brewer base, not a fitted
+model — every input moves a named lever by a stated amount, and the rationale
+reports which input moved which lever. Roast level dominates grind and
+temperature; altitude is a secondary density proxy; the goal picks the ratio and
+the pour split. Brewer characteristics in `lib/recipes/brewers.ts` cap what the
+bed will tolerate.
+
+Grind advice always prefers an offset from the user's own baseline setting over
+an absolute micron figure, because cross-grinder micron claims are not reliable
+enough to state flatly (PRD F6 R1/R3).
+
+## The control chart
+
+`app/journal/ControlChart.tsx` is hand-rolled SVG — the chart is a scatter plot
+inside a rectangle, and a charting library would be more code than the chart.
+The personal preference zone appears only after 8 scored brews that also carry a
+TDS reading, and is weighted by score above the midpoint so a great cup pulls the
+centre harder than a mediocre one.
+
+## Local static server
+
+`npm run build` then `npm start` serves `out/` on port 3100 via Python's
+`http.server` — no extra dependency, and it exercises the same artifact the
+Capacitor shell will consume. `npm run dev` is fine for iteration, but verify
+routing and offline behaviour against the static build.

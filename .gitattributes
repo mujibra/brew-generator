@@ -1,0 +1,8 @@
+# Keep the repo LF regardless of who checks it out. Without this, Windows
+# working copies commit CRLF and the Linux CI lint step disagrees with local.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary

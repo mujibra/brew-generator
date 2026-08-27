@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Extraction">
+  <rect width="512" height="512" rx="96" fill="#1a1614"/>
+  <!-- A V60 cone in section, with the bed and a drop. -->
+  <path d="M136 132h240l-96 196a28 28 0 0 1-48 0z" fill="none" stroke="#e08b4a" stroke-width="22" stroke-linejoin="round"/>
+  <path d="M186 236h140l-38 78a20 20 0 0 1-64 0z" fill="#e08b4a" opacity="0.85"/>
+  <circle cx="256" cy="404" r="26" fill="#e08b4a"/>
+</svg>

@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "build:app": "next build"
+    "build:app": "next build",
+    "icons": "node scripts/build-icons.mjs"
   },
   "dependencies": {
     "dexie": "^4.0.11",

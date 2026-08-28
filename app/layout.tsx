@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
+import { InstallPrompt } from './InstallPrompt'
 import { ServiceWorker } from './ServiceWorker'
 import './globals.css'
 
@@ -17,8 +18,13 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: 'Extraction', statusBarStyle: 'black-translucent' },
   manifest: `${base}/manifest.webmanifest`,
   icons: {
-    icon: `${base}/icon.svg`,
-    apple: `${base}/icon.svg`,
+    icon: [
+      { url: `${base}/icon.svg`, type: 'image/svg+xml' },
+      { url: `${base}/icon-192.png`, sizes: '192x192', type: 'image/png' },
+      { url: `${base}/icon-512.png`, sizes: '512x512', type: 'image/png' },
+    ],
+    // iOS ignores the manifest and reads this. It must be PNG and opaque.
+    apple: [{ url: `${base}/apple-touch-icon.png`, sizes: '180x180', type: 'image/png' }],
   },
 }
 
@@ -36,6 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-dvh">
         {children}
         <ServiceWorker />
+        <InstallPrompt />
       </body>
     </html>
   )

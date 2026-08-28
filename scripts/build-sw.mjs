@@ -168,10 +168,12 @@ const manifestPath = join(OUT, 'manifest.webmanifest')
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
 manifest.start_url = `${BASE}/`
 manifest.scope = `${BASE}/`
-manifest.icons = manifest.icons.map((icon) => ({
-  ...icon,
-  src: icon.src.startsWith(BASE) ? icon.src : `${BASE}${icon.src}`,
-}))
+const prefix = (path) => (BASE && path.startsWith(BASE) ? path : `${BASE}${path}`)
+manifest.icons = manifest.icons.map((icon) => ({ ...icon, src: prefix(icon.src) }))
+if (manifest.shortcuts) {
+  manifest.shortcuts = manifest.shortcuts.map((s) => ({ ...s, url: prefix(s.url) }))
+}
+if (manifest.id) manifest.id = prefix(manifest.id)
 await writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf8')
 
 // Without this, GitHub Pages runs Jekyll, which silently ignores every

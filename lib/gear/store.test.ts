@@ -1,6 +1,7 @@
 import type { BrewRecord } from '@/lib/db/repository'
 import { describe, expect, it } from 'vitest'
 import {
+  applyGrindMove,
   attemptsFromBrews,
   baselineCount,
   baselineFor,
@@ -8,6 +9,7 @@ import {
   drawdownFromBrew,
   emptyGear,
   grinderOf,
+  lastGrindSetting,
   mostRecentBrew,
   setBaseline,
   setGrinder,
@@ -216,5 +218,75 @@ describe('symptomFromBrew', () => {
     expect(symptomFromBrew(brew())).toBeUndefined()
     expect(symptomFromBrew(brew({ tags: [] }))).toBeUndefined()
     expect(symptomFromBrew(undefined)).toBeUndefined()
+  })
+})
+
+describe('lastGrindSetting', () => {
+  it('returns the setting from the most recent brew that recorded one', () => {
+    expect(
+      lastGrindSetting([
+        brew({ startedAt: NOW - 2000, grindSetting: '62' }),
+        brew({ startedAt: NOW, grindSetting: '66' }),
+        brew({ startedAt: NOW - 1000, grindSetting: '64' }),
+      ]),
+    ).toBe('66')
+  })
+
+  // A French press number says nothing about your V60.
+  it('scopes to a recipe when given one', () => {
+    const brews = [
+      brew({ startedAt: NOW, recipeId: 'french-press-clean', grindSetting: '90' }),
+      brew({ startedAt: NOW - 1000, recipeId: 'v60-ultimate', grindSetting: '66' }),
+    ]
+    expect(lastGrindSetting(brews, 'v60-ultimate')).toBe('66')
+    expect(lastGrindSetting(brews)).toBe('90')
+  })
+
+  it('ignores brews with no grind recorded', () => {
+    expect(
+      lastGrindSetting([brew({ startedAt: NOW }), brew({ startedAt: NOW - 1 })]),
+    ).toBeUndefined()
+  })
+})
+
+describe('applyGrindMove', () => {
+  // Coarser is a higher number on every grinder in the registry.
+  it('adds for coarser and subtracts for finer', () => {
+    expect(applyGrindMove('66', { delta: 3, direction: 'coarser' })).toBe('69')
+    expect(applyGrindMove('66', { delta: 3, direction: 'finer' })).toBe('63')
+  })
+
+  it('never goes below zero', () => {
+    expect(applyGrindMove('2', { delta: 5, direction: 'finer' })).toBe('0')
+  })
+
+  it('says nothing without a starting point or a move', () => {
+    expect(applyGrindMove(undefined, { delta: 3, direction: 'finer' })).toBeUndefined()
+    expect(applyGrindMove('66', undefined)).toBeUndefined()
+    expect(applyGrindMove('not a number', { delta: 3, direction: 'finer' })).toBeUndefined()
+  })
+})
+
+describe('setPending carries the grind target', () => {
+  it('stores where the change goes, not just what to do', () => {
+    const gear = setPending(emptyGear(NOW), 'grindTooFine', 'Grind 3 clicks coarser', NOW, {
+      fromGrind: '66',
+      targetGrind: '69',
+      recipeId: 'v60-ultimate',
+    })
+    expect(gear.pendingHypothesis).toEqual({
+      id: 'grindTooFine',
+      action: 'Grind 3 clicks coarser',
+      setAt: NOW,
+      fromGrind: '66',
+      targetGrind: '69',
+      recipeId: 'v60-ultimate',
+    })
+  })
+
+  it('still works for levers that are not grind', () => {
+    const gear = setPending(emptyGear(NOW), 'tempTooLow', 'Raise by 2 °C', NOW)
+    expect(gear.pendingHypothesis?.targetGrind).toBeUndefined()
+    expect(gear.pendingHypothesis?.id).toBe('tempTooLow')
   })
 })

@@ -12,7 +12,7 @@ import {
 import { repository } from '@/lib/db/dexie'
 import type { BeanRecord } from '@/lib/db/repository'
 import type { SettingsRecord } from '@/lib/db/repository'
-import { baselineFor, clearPending, emptyGear, grinderOf } from '@/lib/gear/store'
+import { baselineFor, clearPending, emptyGear, grinderOf, lastGrindSetting } from '@/lib/gear/store'
 import type { BrewerId } from '@/lib/recipes/brewers'
 import type { BuiltinRecipe } from '@/lib/recipes/builtin'
 import { beanAge, brewsLeft, consumeDose, summariseShelf } from '@/lib/shelf/bean'
@@ -64,19 +64,35 @@ export function LogSheet({
 
   // If the user committed to a dial-in change, this is the moment they can
   // actually judge it (PRD F4 R3).
+  const [grindSource, setGrindSource] = useState<'pending' | 'last' | 'baseline' | null>(null)
+
   useEffect(() => {
-    repository()
-      .settings.get('gear')
-      .then((row) => {
+    const repo = repository()
+    Promise.all([repo.settings.get('gear'), repo.brews.all()])
+      .then(([row, allBrews]) => {
         const g = row ?? emptyGear(Date.now())
         setGear(g)
-        // Pre-fill from your baseline for this brewer: most brews are at it, and
-        // the ones that are not are exactly the ones worth recording.
+
+        // Priority matters. A pending dial-in target is what you are testing; the
+        // last setting you actually used beats a static baseline; the baseline is
+        // only the fallback for a first brew.
+        const pending = g.pendingHypothesis?.targetGrind
+        const last = lastGrindSetting(allBrews, recipe.id)
         const baseline = baselineFor(g, recipe.methodId as BrewerId)
-        if (baseline !== undefined) setGrind(String(baseline))
+
+        if (pending) {
+          setGrind(pending)
+          setGrindSource('pending')
+        } else if (last) {
+          setGrind(last)
+          setGrindSource('last')
+        } else if (baseline !== undefined) {
+          setGrind(String(baseline))
+          setGrindSource('baseline')
+        }
       })
       .catch(() => setGear(null))
-  }, [recipe.methodId])
+  }, [recipe.methodId, recipe.id])
 
   // Which bag was this? Attaching it is what turns the journal into per-bag
   // history and lets the shelf decrement itself (PRD F5 R4).
@@ -299,19 +315,34 @@ export function LogSheet({
         </span>
         <p className="mt-2 text-sm text-[var(--color-faint)]">
           {(() => {
-            const baseline = baselineFor(gear ?? undefined, brewerId)
+            const units = grinder?.unitLabel ?? 'steps'
+            const pending = gear?.pendingHypothesis
             const current = grind.trim() === '' ? undefined : Number(grind)
-            if (baseline === undefined) {
+
+            if (grindSource === 'pending' && pending?.targetGrind) {
+              const from = pending.fromGrind
+              return from
+                ? `Testing the dial-in change: ${from} → ${pending.targetGrind} ${units}.`
+                : `Testing the dial-in change: ${pending.targetGrind} ${units}.`
+            }
+
+            const reference =
+              grindSource === 'last' ? undefined : baselineFor(gear ?? undefined, brewerId)
+
+            if (grindSource === 'last') {
+              return 'Carried over from your last brew of this recipe. Change it if you moved the grinder.'
+            }
+            if (reference === undefined) {
               return grinder
                 ? 'Set a baseline in Gear and this fills itself in.'
                 : 'Recording this is what lets the journal show which settings actually score well.'
             }
             if (current === undefined || !Number.isFinite(current)) {
-              return `Your ${brewerId} baseline is ${baseline}.`
+              return `Your ${brewerId} baseline is ${reference}.`
             }
-            const delta = current - baseline
-            if (delta === 0) return `At your baseline of ${baseline}.`
-            return `${Math.abs(delta)} ${grinder?.unitLabel ?? 'steps'} ${delta > 0 ? 'coarser' : 'finer'} than your baseline of ${baseline}.`
+            const delta = current - reference
+            if (delta === 0) return `At your baseline of ${reference}.`
+            return `${Math.abs(delta)} ${units} ${delta > 0 ? 'coarser' : 'finer'} than your baseline of ${reference}.`
           })()}
         </p>
       </div>

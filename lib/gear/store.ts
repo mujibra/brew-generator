@@ -63,8 +63,45 @@ export function setPending(
   hypothesisId: string,
   action: string,
   now: number,
+  extra?: { fromGrind?: string; targetGrind?: string; recipeId?: string },
 ): SettingsRecord {
-  return { ...gear, pendingHypothesis: { id: hypothesisId, action, setAt: now } }
+  return {
+    ...gear,
+    pendingHypothesis: {
+      id: hypothesisId,
+      action,
+      setAt: now,
+      ...(extra?.fromGrind ? { fromGrind: extra.fromGrind } : {}),
+      ...(extra?.targetGrind ? { targetGrind: extra.targetGrind } : {}),
+      ...(extra?.recipeId ? { recipeId: extra.recipeId } : {}),
+    },
+  }
+}
+
+/**
+ * The grind setting you actually last used, which is the truth a baseline is
+ * only an approximation of. Scoped to a recipe when given, because a setting
+ * from a French press says nothing about your V60.
+ */
+export function lastGrindSetting(brews: BrewRecord[], recipeId?: string): string | undefined {
+  return brews
+    .filter((b) => b.grindSetting && (!recipeId || b.recipeId === recipeId))
+    .sort((a, b) => b.startedAt - a.startedAt)[0]?.grindSetting
+}
+
+/**
+ * Apply a grind move to a setting. Coarser is a higher number on every grinder
+ * in the registry — more clicks open the burrs wider.
+ */
+export function applyGrindMove(
+  from: string | undefined,
+  move: { delta: number; direction: 'finer' | 'coarser' } | undefined,
+): string | undefined {
+  if (!from || !move) return undefined
+  const n = Number(from)
+  if (!Number.isFinite(n)) return undefined
+  const next = move.direction === 'coarser' ? n + move.delta : n - move.delta
+  return String(Math.max(0, next))
 }
 
 export function clearPending(gear: SettingsRecord): SettingsRecord {

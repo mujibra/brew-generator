@@ -132,9 +132,15 @@ would be more code than the renderer.
 
 ## Grind settings
 
-The brew log captures the grind setting, pre-filled from your Gear baseline for
-that brewer and showing the offset as you change it ("3 clicks finer than your
-baseline of 44"). That single field is what makes two things possible: the
+The brew log captures the grind setting. What it pre-fills with follows a strict
+priority, because getting this wrong silently loses the advice:
+
+1. **A pending dial-in target.** Commit to "3 clicks coarser" from a brew at 66
+   and every screen afterwards says 69 — the ready screen before you touch the
+   grinder, and the log field when you record it.
+2. **The setting you last actually used** on that recipe. Your real current
+   position, not an approximation of it.
+3. **The Gear baseline**, only as the fallback for a first brew. That single field is what makes two things possible: the
 journal's score-against-grind breakdown, and a dial-in recommendation phrased as
 absolute numbers rather than a direction.
 

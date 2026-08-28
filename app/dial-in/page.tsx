@@ -7,10 +7,12 @@ import type { BrewRecord, SettingsRecord } from '@/lib/db/repository'
 import { type Attempt, diagnose } from '@/lib/dialin/engine'
 import type { Drawdown, Symptom } from '@/lib/dialin/rules'
 import {
+  applyGrindMove,
   attemptsFromBrews,
   drawdownFromBrew,
   emptyGear,
   grinderOf,
+  lastGrindSetting,
   mostRecentBrew,
   setPending,
   symptomFromBrew,
@@ -68,6 +70,12 @@ function DialIn() {
     [brews, targetId],
   )
   const targeted = Boolean(targetId && subject?.id === targetId)
+
+  // Move from the setting actually used, not from a static baseline.
+  const fromGrind = useMemo(
+    () => subject?.grindSetting ?? lastGrindSetting(brews, subject?.recipeId),
+    [subject, brews],
+  )
   const history: Attempt[] = useMemo(() => attemptsFromBrews(brews) as Attempt[], [brews])
 
   // Seed the drawdown answer from the last brew, so the user is not retyping
@@ -122,7 +130,12 @@ function DialIn() {
    */
   async function commit() {
     if (!result.ok || !gear) return
-    const next = setPending(gear, result.value.hypothesis.id, result.value.action, Date.now())
+    const targetGrind = applyGrindMove(fromGrind, result.value.grindUnits)
+    const next = setPending(gear, result.value.hypothesis.id, result.value.action, Date.now(), {
+      ...(fromGrind ? { fromGrind } : {}),
+      ...(targetGrind ? { targetGrind } : {}),
+      ...(subject?.recipeId ? { recipeId: subject.recipeId } : {}),
+    })
     setGear(next)
     setCommitted(true)
     await repository().settings.put({ ...next, updatedAt: Date.now() })
@@ -249,22 +262,21 @@ function DialIn() {
               Do this next
             </p>
             <p className="mt-2 text-xl font-medium">{result.value.action}</p>
-            {result.value.grindUnits &&
-              subject?.grindSetting &&
-              Number.isFinite(Number(subject.grindSetting)) &&
-              (() => {
-                const from = Number(subject.grindSetting)
-                const { delta, direction, unitLabel } = result.value.grindUnits
-                const to = direction === 'finer' ? from - delta : from + delta
-                return (
-                  <p className="mt-2 text-lg tabular-nums">
-                    <span className="text-[var(--color-muted)]">{from}</span>
-                    <span className="text-[var(--color-faint)]"> → </span>
-                    <span className="font-semibold text-[var(--color-accent)]">{to}</span>
-                    <span className="text-[var(--color-faint)]"> {unitLabel}</span>
-                  </p>
-                )
-              })()}
+            {(() => {
+              const to = applyGrindMove(fromGrind, result.value.grindUnits)
+              if (!to || !result.value.grindUnits) return null
+              return (
+                <p className="mt-2 text-lg tabular-nums">
+                  <span className="text-[var(--color-muted)]">{fromGrind}</span>
+                  <span className="text-[var(--color-faint)]"> → </span>
+                  <span className="font-semibold text-[var(--color-accent)]">{to}</span>
+                  <span className="text-[var(--color-faint)]">
+                    {' '}
+                    {result.value.grindUnits.unitLabel}
+                  </span>
+                </p>
+              )
+            })()}
             <p className="mt-4 text-sm text-[var(--color-muted)]">
               <span className="text-[var(--color-ink)]">Expect: </span>
               {result.value.prediction}
@@ -306,8 +318,17 @@ function DialIn() {
                   When you log it, the app will ask whether it helped and remember the answer. Three
                   no-change results in a row and it moves on to a different explanation.
                 </p>
+                {gear?.pendingHypothesis?.targetGrind && (
+                  <p className="mt-2 text-sm">
+                    <span className="text-[var(--color-muted)]">Set your grinder to </span>
+                    <span className="font-semibold tabular-nums text-[var(--color-accent)]">
+                      {gear.pendingHypothesis.targetGrind}
+                    </span>
+                    <span className="text-[var(--color-muted)]"> before you start.</span>
+                  </p>
+                )}
                 <Link
-                  href="/brew/"
+                  href={subject?.recipeId ? `/brew/${subject.recipeId}/` : '/brew/'}
                   className="tap mt-3 inline-block rounded-xl bg-[var(--color-accent)] px-5 text-sm font-semibold leading-10 text-[var(--color-on-accent)]"
                 >
                   Brew it

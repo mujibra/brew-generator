@@ -134,7 +134,17 @@ export type SettingsRecord = Entity & {
   baselines?: Record<string, number>
   typicalDoseG?: number
   /** A dial-in suggestion the user said they would try, awaiting a verdict. */
-  pendingHypothesis?: { id: string; action: string; setAt: number }
+  pendingHypothesis?: {
+    id: string
+    action: string
+    setAt: number
+    /** The setting the brew was diagnosed at, so the change is traceable. */
+    fromGrind?: string
+    /** The setting to actually use. Without this the advice never reaches the grinder. */
+    targetGrind?: string
+    /** Where to brew it, so "Brew it" returns to the recipe being dialled in. */
+    recipeId?: string
+  }
 }
 
 export type WaterProfileRecord = Entity & {

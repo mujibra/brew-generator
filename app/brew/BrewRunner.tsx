@@ -18,7 +18,8 @@ import {
 import { compileRecipe } from '@/lib/brew/steps'
 import { formatElapsed } from '@/lib/brew/timer'
 import { repository } from '@/lib/db/dexie'
-import type { BeanRecord, BrewRecord } from '@/lib/db/repository'
+import type { BeanRecord, BrewRecord, SettingsRecord } from '@/lib/db/repository'
+import { emptyGear, grinderOf, lastGrindSetting } from '@/lib/gear/store'
 import { type BuiltinRecipe, toRecipeInput } from '@/lib/recipes/builtin'
 import { summariseShelf } from '@/lib/shelf/bean'
 import Link from 'next/link'
@@ -33,15 +34,17 @@ export function BrewRunner({ recipe }: { recipe: BuiltinRecipe }) {
   const [actualG, setActualG] = useState<string>('')
   const [beans, setBeans] = useState<BeanRecord[]>([])
   const [brews, setBrews] = useState<BrewRecord[]>([])
+  const [gear, setGear] = useState<SettingsRecord | null>(null)
 
   // The shelf, for choosing a bag before the timer starts.
   useEffect(() => {
     const repo = repository()
-    Promise.all([repo.beans.all(), repo.brews.all()])
-      .then(([allBeans, allBrews]) => {
+    Promise.all([repo.beans.all(), repo.brews.all(), repo.settings.get('gear')])
+      .then(([allBeans, allBrews, row]) => {
         const active = summariseShelf(allBeans, Date.now(), recipe.doseG).active
         setBeans(active)
         setBrews(allBrews)
+        setGear(row ?? emptyGear(Date.now()))
         // One bag on the shelf is not a choice worth making.
         if (active.length === 1) setSession((s) => (s.timer ? s : chooseBean(s, active[0]!.id)))
       })
@@ -138,6 +141,44 @@ export function BrewRunner({ recipe }: { recipe: BuiltinRecipe }) {
           <p className="mt-2 text-[var(--color-muted)]">
             First step: {compiled.steps[0]?.instruction}
           </p>
+
+          {(() => {
+            const pending = gear?.pendingHypothesis
+            const grinder = grinderOf(gear ?? undefined)
+            const units = grinder?.unitLabel ?? 'clicks'
+            const target = pending?.targetGrind ?? lastGrindSetting(brews, recipe.id)
+            if (!target) return null
+            return (
+              <div
+                className={`mt-6 rounded-2xl border p-4 ${
+                  pending?.targetGrind
+                    ? 'border-[var(--color-accent)] bg-[var(--color-surface)]'
+                    : 'border-[var(--color-line)] bg-[var(--color-surface)]'
+                }`}
+              >
+                <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">
+                  {pending?.targetGrind ? 'Testing this change' : 'Your last setting'}
+                </p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums">
+                  {pending?.fromGrind && (
+                    <>
+                      <span className="text-[var(--color-muted)]">{pending.fromGrind}</span>
+                      <span className="text-[var(--color-faint)]"> → </span>
+                    </>
+                  )}
+                  <span className="text-[var(--color-accent)]">{target}</span>
+                  <span className="ml-1 text-base font-normal text-[var(--color-faint)]">
+                    {units}
+                  </span>
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                  {pending?.targetGrind
+                    ? 'Set your grinder here before you start. The log will ask whether it helped.'
+                    : 'Carried over from your last brew of this recipe.'}
+                </p>
+              </div>
+            )
+          })()}
 
           <div className="mt-6">
             <BeanChoice

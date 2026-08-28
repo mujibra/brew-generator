@@ -746,6 +746,9 @@ export function toRunnable(r: GeneratedRecipe): BuiltinRecipe {
     waterG: r.waterG,
     waterTempC: r.waterTempC,
     grind: r.grind.text,
+    // The number the recipe actually asks for. Dropping this was why the log
+    // fell back to a stale baseline instead of the setting just recommended.
+    ...(r.grind.settingUnits !== undefined ? { grindSetting: String(r.grind.settingUnits) } : {}),
     intent: r.goal === 'acidity' ? 'clarity' : (r.goal as BuiltinRecipe['intent']),
     optimisingFor: r.rationale.find((s) => s.heading === 'Ratio')?.lines[0] ?? '',
     geometry: r.brewer.geometry,

@@ -146,8 +146,10 @@ export function BrewRunner({ recipe }: { recipe: BuiltinRecipe }) {
             const pending = gear?.pendingHypothesis
             const grinder = grinderOf(gear ?? undefined)
             const units = grinder?.unitLabel ?? 'clicks'
-            const target = pending?.targetGrind ?? lastGrindSetting(brews, recipe.id)
+            const last = lastGrindSetting(brews, recipe.id)
+            const target = pending?.targetGrind ?? last ?? recipe.grindSetting
             if (!target) return null
+            const source = pending?.targetGrind ? 'pending' : last ? 'last' : 'recipe'
             return (
               <div
                 className={`mt-6 rounded-2xl border p-4 ${
@@ -157,7 +159,11 @@ export function BrewRunner({ recipe }: { recipe: BuiltinRecipe }) {
                 }`}
               >
                 <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">
-                  {pending?.targetGrind ? 'Testing this change' : 'Your last setting'}
+                  {source === 'pending'
+                    ? 'Testing this change'
+                    : source === 'last'
+                      ? 'Your last setting'
+                      : 'This recipe asks for'}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums">
                   {pending?.fromGrind && (
@@ -172,9 +178,11 @@ export function BrewRunner({ recipe }: { recipe: BuiltinRecipe }) {
                   </span>
                 </p>
                 <p className="mt-1 text-sm text-[var(--color-muted)]">
-                  {pending?.targetGrind
+                  {source === 'pending'
                     ? 'Set your grinder here before you start. The log will ask whether it helped.'
-                    : 'Carried over from your last brew of this recipe.'}
+                    : source === 'last'
+                      ? 'Carried over from your last brew of this recipe.'
+                      : 'Worked out from your grinder, the roast and the bean.'}
                 </p>
               </div>
             )

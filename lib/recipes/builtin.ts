@@ -23,6 +23,12 @@ export type BuiltinRecipe = RecipeInput & {
   waterG: number
   waterTempC: number
   grind: string
+  /**
+   * The numeric setting this recipe recommends, when it can compute one.
+   * `grind` is prose for the human; this is what the brew screen and the log
+   * pre-fill with. Built-in recipes say "medium-fine" and have no number.
+   */
+  grindSetting?: string
   intent: Intent
   /** What the recipe is for, in one line the user can act on. */
   optimisingFor: string

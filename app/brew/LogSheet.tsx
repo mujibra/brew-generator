@@ -64,7 +64,9 @@ export function LogSheet({
 
   // If the user committed to a dial-in change, this is the moment they can
   // actually judge it (PRD F4 R3).
-  const [grindSource, setGrindSource] = useState<'pending' | 'last' | 'baseline' | null>(null)
+  const [grindSource, setGrindSource] = useState<'pending' | 'last' | 'recipe' | 'baseline' | null>(
+    null,
+  )
 
   useEffect(() => {
     const repo = repository()
@@ -73,11 +75,15 @@ export function LogSheet({
         const g = row ?? emptyGear(Date.now())
         setGear(g)
 
-        // Priority matters. A pending dial-in target is what you are testing; the
-        // last setting you actually used beats a static baseline; the baseline is
-        // only the fallback for a first brew.
+        // Priority matters, and getting it wrong silently loses the advice.
+        // A pending dial-in target is what you are testing. Otherwise the setting
+        // you last actually used on this recipe is your real position. Failing
+        // that, the recipe's own recommendation — a built recipe works out a
+        // number, and ignoring it in favour of a stale baseline was a bug. The
+        // baseline is only the fallback for a first brew of an untuned recipe.
         const pending = g.pendingHypothesis?.targetGrind
         const last = lastGrindSetting(allBrews, recipe.id)
+        const fromRecipe = recipe.grindSetting
         const baseline = baselineFor(g, recipe.methodId as BrewerId)
 
         if (pending) {
@@ -86,13 +92,16 @@ export function LogSheet({
         } else if (last) {
           setGrind(last)
           setGrindSource('last')
+        } else if (fromRecipe) {
+          setGrind(fromRecipe)
+          setGrindSource('recipe')
         } else if (baseline !== undefined) {
           setGrind(String(baseline))
           setGrindSource('baseline')
         }
       })
       .catch(() => setGear(null))
-  }, [recipe.methodId, recipe.id])
+  }, [recipe.methodId, recipe.id, recipe.grindSetting])
 
   // Which bag was this? Attaching it is what turns the journal into per-bag
   // history and lets the shelf decrement itself (PRD F5 R4).
@@ -331,6 +340,9 @@ export function LogSheet({
 
             if (grindSource === 'last') {
               return 'Carried over from your last brew of this recipe. Change it if you moved the grinder.'
+            }
+            if (grindSource === 'recipe') {
+              return 'What this recipe asks for. Change it if you ground differently.'
             }
             if (reference === undefined) {
               return grinder

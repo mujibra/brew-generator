@@ -1,7 +1,7 @@
 import { compileRecipe, targetMassAt } from '@/lib/brew/steps'
 import { describe, expect, it } from 'vitest'
 import { BREWER_LIST } from './brewers'
-import { type BrewGoal, GOALS, type GenerateInput, generateRecipe } from './generate'
+import { type BrewGoal, GOALS, type GenerateInput, generateRecipe, toRunnable } from './generate'
 
 const base: GenerateInput = {
   brewerId: 'v60',
@@ -293,5 +293,36 @@ describe('grinder registry', () => {
     expect(r.grind.settingUnits!).toBeGreaterThanOrEqual(38)
     expect(r.grind.settingUnits!).toBeLessThanOrEqual(64)
     expect(r.grind.caveat).not.toMatch(/suspicion/)
+  })
+})
+
+describe('the recipe carries its grind number, not only the sentence', () => {
+  // Dropping this was the bug: the brew log had no number from the recipe and
+  // fell back to a stale Gear baseline, so the dial-in then moved from the
+  // wrong starting point.
+  it('exposes the setting as a number the log can pre-fill with', () => {
+    const r = gen({ grinderId: 'timemore-s3' })
+    const runnable = toRunnable(r)
+    expect(r.grind.settingUnits).toBeGreaterThan(0)
+    expect(runnable.grindSetting).toBe(String(r.grind.settingUnits))
+  })
+
+  it('matches the number quoted in the prose', () => {
+    const r = gen({ grinderId: 'timemore-s3' })
+    const runnable = toRunnable(r)
+    expect(r.grind.text).toContain(String(runnable.grindSetting))
+  })
+
+  it('respects a baseline, so the number is anchored to the user own setting', () => {
+    const r = gen({ grinderId: 'timemore-s3', baselineSetting: 63, brewerId: 'v60' })
+    const runnable = toRunnable(r)
+    // 63 plus the roast/goal offset in clicks, not a bare micron division.
+    expect(r.grind.deltaFromBaseline).toBeDefined()
+    expect(Number(runnable.grindSetting)).toBe(63 + (r.grind.deltaFromBaseline ?? 0))
+  })
+
+  it('omits the number when the grinder has no credible step size', () => {
+    expect(toRunnable(gen({ grinderId: 'other' })).grindSetting).toBeUndefined()
+    expect(toRunnable(gen({})).grindSetting).toBeUndefined()
   })
 })

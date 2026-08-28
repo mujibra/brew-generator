@@ -140,7 +140,11 @@ priority, because getting this wrong silently loses the advice:
    grinder, and the log field when you record it.
 2. **The setting you last actually used** on that recipe. Your real current
    position, not an approximation of it.
-3. **The Gear baseline**, only as the fallback for a first brew. That single field is what makes two things possible: the
+3. **The recipe's own recommendation.** A built recipe works out a number from
+   your grinder, the roast and the bean; ignoring it in favour of a baseline was
+   a bug.
+4. **The Gear baseline**, only as the fallback for a first brew of an untuned
+   recipe. That single field is what makes two things possible: the
 journal's score-against-grind breakdown, and a dial-in recommendation phrased as
 absolute numbers rather than a direction.
 

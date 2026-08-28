@@ -18,7 +18,7 @@ import {
   symptomFromBrew,
 } from '@/lib/gear/store'
 import { cardById } from '@/lib/learn/cards'
-import { RECIPES, recipeById, toRecipeInput } from '@/lib/recipes/builtin'
+import { RECIPES, brewHref, recipeById, toRecipeInput } from '@/lib/recipes/builtin'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
@@ -328,7 +328,7 @@ function DialIn() {
                   </p>
                 )}
                 <Link
-                  href={subject?.recipeId ? `/brew/${subject.recipeId}/` : '/brew/'}
+                  href={brewHref(subject?.recipeId)}
                   className="tap mt-3 inline-block rounded-xl bg-[var(--color-accent)] px-5 text-sm font-semibold leading-10 text-[var(--color-on-accent)]"
                 >
                   Brew it

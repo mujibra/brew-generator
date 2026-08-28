@@ -254,6 +254,19 @@ export const RECIPES: BuiltinRecipe[] = [
   },
 ]
 
+/**
+ * The route that actually brews a given recipe id.
+ *
+ * Only the built-ins get their own static route. A generated recipe lives at
+ * /brew/custom/, and an unknown id — a recipe that was removed, or an ad-hoc
+ * brew — has no page at all, so it falls back to the index rather than 404ing.
+ */
+export function brewHref(recipeId: string | undefined): string {
+  if (!recipeId) return '/brew/'
+  if (recipeId === 'generated') return '/brew/custom/'
+  return RECIPES.some((r) => r.id === recipeId) ? `/brew/${recipeId}/` : '/brew/'
+}
+
 export function recipeById(id: string): BuiltinRecipe | undefined {
   return RECIPES.find((r) => r.id === id)
 }

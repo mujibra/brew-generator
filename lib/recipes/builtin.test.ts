@@ -1,6 +1,6 @@
 import { compileRecipe, targetMassAt } from '@/lib/brew/steps'
 import { describe, expect, it } from 'vitest'
-import { RECIPES, recipeById, toRecipeInput } from './builtin'
+import { RECIPES, brewHref, recipeById, toRecipeInput } from './builtin'
 
 describe('built-in recipes', () => {
   it('all compile', () => {
@@ -54,5 +54,31 @@ describe('built-in recipes', () => {
   it('looks up by id', () => {
     expect(recipeById('v60-ultimate')?.name).toBe('Ultimate V60')
     expect(recipeById('nope')).toBeUndefined()
+  })
+})
+
+describe('brewHref', () => {
+  it('routes a built-in to its own page', () => {
+    expect(brewHref('v60-ultimate')).toBe('/brew/v60-ultimate/')
+    expect(brewHref('french-press-clean')).toBe('/brew/french-press-clean/')
+  })
+
+  // Only the built-ins get a static route; a generated recipe lives elsewhere.
+  it('routes a generated recipe to the custom runner, not a 404', () => {
+    expect(brewHref('generated')).toBe('/brew/custom/')
+  })
+
+  it('falls back to the index for an unknown or missing id', () => {
+    expect(brewHref('a-recipe-that-was-deleted')).toBe('/brew/')
+    expect(brewHref(undefined)).toBe('/brew/')
+    expect(brewHref('')).toBe('/brew/')
+  })
+
+  // The guarantee that keeps this honest: every href it returns is a real route.
+  it('only ever returns paths that exist', () => {
+    const routes = new Set(['/brew/', '/brew/custom/', ...RECIPES.map((r) => `/brew/${r.id}/`)])
+    for (const id of [...RECIPES.map((r) => r.id), 'generated', 'nonsense', undefined]) {
+      expect(routes.has(brewHref(id)), String(id)).toBe(true)
+    }
   })
 })

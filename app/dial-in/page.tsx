@@ -1,6 +1,7 @@
 'use client'
 
 import { compileRecipe } from '@/lib/brew/steps'
+import { formatElapsed } from '@/lib/brew/timer'
 import { repository } from '@/lib/db/dexie'
 import type { BrewRecord, SettingsRecord } from '@/lib/db/repository'
 import { type Attempt, diagnose } from '@/lib/dialin/engine'
@@ -12,10 +13,13 @@ import {
   grinderOf,
   mostRecentBrew,
   setPending,
+  symptomFromBrew,
 } from '@/lib/gear/store'
 import { cardById } from '@/lib/learn/cards'
-import { recipeById, toRecipeInput } from '@/lib/recipes/builtin'
+import { RECIPES, recipeById, toRecipeInput } from '@/lib/recipes/builtin'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
 const SYMPTOMS: { id: Symptom; label: string; hint: string }[] = [
@@ -36,7 +40,9 @@ const DRAWDOWNS: { id: Drawdown | 'unknown'; label: string }[] = [
   { id: 'stalled', label: 'Stalled' },
 ]
 
-export default function DialInPage() {
+function DialIn() {
+  const params = useSearchParams()
+  const targetId = params.get('brew')
   const [symptom, setSymptom] = useState<Symptom>('sour')
   const [drawdown, setDrawdown] = useState<Drawdown | 'unknown'>('unknown')
   const [expert, setExpert] = useState(false)
@@ -56,22 +62,33 @@ export default function DialInPage() {
       .catch(() => setGear(emptyGear(Date.now())))
   }, [])
 
-  const last = useMemo(() => mostRecentBrew(brews), [brews])
+  // The journal can name a specific brew; otherwise diagnose the latest.
+  const subject = useMemo(
+    () => (targetId ? brews.find((b) => b.id === targetId) : undefined) ?? mostRecentBrew(brews),
+    [brews, targetId],
+  )
+  const targeted = Boolean(targetId && subject?.id === targetId)
   const history: Attempt[] = useMemo(() => attemptsFromBrews(brews) as Attempt[], [brews])
 
   // Seed the drawdown answer from the last brew, so the user is not retyping
   // something the log already knows.
   const inferredDrawdown = useMemo(() => {
-    if (!last?.recipeId) return undefined
-    const recipe = recipeById(last.recipeId)
+    if (!subject?.recipeId) return undefined
+    const recipe = recipeById(subject.recipeId)
     if (!recipe) return undefined
     const expected = compileRecipe(toRecipeInput(recipe)).totalS
-    return drawdownFromBrew(last, expected)
-  }, [last])
+    return drawdownFromBrew(subject, expected)
+  }, [subject])
 
   useEffect(() => {
     if (inferredDrawdown) setDrawdown(inferredDrawdown)
   }, [inferredDrawdown])
+
+  // The tags on the brew already say what was wrong with it.
+  const inferredSymptom = useMemo(() => symptomFromBrew(subject), [subject])
+  useEffect(() => {
+    if (inferredSymptom) setSymptom(inferredSymptom as Symptom)
+  }, [inferredSymptom])
   const grinder = grinderOf(gear ?? undefined)
 
   const result = useMemo(() => {
@@ -120,6 +137,41 @@ export default function DialInPage() {
       <p className="mt-2 text-[var(--color-muted)]">
         One change at a time. Tell it what is wrong, brew again, then say whether it helped.
       </p>
+
+      {subject && (
+        <section className="mt-6 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+          <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">
+            {targeted ? 'Diagnosing this brew' : 'Based on your last brew'}
+          </p>
+          <p className="mt-1 font-medium">
+            {RECIPES.find((r) => r.id === subject.recipeId)?.name ??
+              (subject.recipeId === 'generated' ? 'Built recipe' : 'Ad-hoc brew')}
+          </p>
+          <p className="mt-1 text-sm text-[var(--color-faint)] tabular-nums">
+            {new Date(subject.startedAt).toLocaleDateString(undefined, {
+              day: 'numeric',
+              month: 'short',
+            })}
+            {` · ${subject.doseG}:${subject.waterG}`}
+            {` · ${formatElapsed(subject.totalTimeS * 1000)}`}
+            {subject.grindSetting && ` · grind ${subject.grindSetting}`}
+            {subject.score !== undefined && ` · scored ${subject.score}`}
+          </p>
+          {(inferredSymptom || inferredDrawdown) && (
+            <p className="mt-2 text-sm text-[var(--color-muted)]">
+              Filled in from the log
+              {inferredSymptom && ` — tagged ${inferredSymptom}`}
+              {inferredDrawdown && `, drawdown ${inferredDrawdown}`}. Change anything below if it
+              was not quite that.
+            </p>
+          )}
+          {!targeted && (
+            <Link href="/journal/" className="tap mt-2 inline-block text-sm underline">
+              Pick a different brew from the journal
+            </Link>
+          )}
+        </section>
+      )}
 
       <fieldset className="mt-8">
         <legend className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--color-muted)]">
@@ -197,6 +249,22 @@ export default function DialInPage() {
               Do this next
             </p>
             <p className="mt-2 text-xl font-medium">{result.value.action}</p>
+            {result.value.grindUnits &&
+              subject?.grindSetting &&
+              Number.isFinite(Number(subject.grindSetting)) &&
+              (() => {
+                const from = Number(subject.grindSetting)
+                const { delta, direction, unitLabel } = result.value.grindUnits
+                const to = direction === 'finer' ? from - delta : from + delta
+                return (
+                  <p className="mt-2 text-lg tabular-nums">
+                    <span className="text-[var(--color-muted)]">{from}</span>
+                    <span className="text-[var(--color-faint)]"> → </span>
+                    <span className="font-semibold text-[var(--color-accent)]">{to}</span>
+                    <span className="text-[var(--color-faint)]"> {unitLabel}</span>
+                  </p>
+                )
+              })()}
             <p className="mt-4 text-sm text-[var(--color-muted)]">
               <span className="text-[var(--color-ink)]">Expect: </span>
               {result.value.prediction}
@@ -290,5 +358,14 @@ export default function DialInPage() {
         )}
       </section>
     </main>
+  )
+}
+
+export default function DialInPage() {
+  // useSearchParams needs a Suspense boundary to prerender under static export.
+  return (
+    <Suspense fallback={null}>
+      <DialIn />
+    </Suspense>
   )
 }

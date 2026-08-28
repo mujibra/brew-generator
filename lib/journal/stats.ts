@@ -184,6 +184,48 @@ export function byRecipe(brews: BrewRecord[]): RecipeBreakdown[] {
     .sort((a, b) => (b.avgScore ?? -1) - (a.avgScore ?? -1) || b.count - a.count)
 }
 
+export type GrindBreakdown = {
+  setting: string
+  count: number
+  avgScore?: number
+  avgEyPct?: number
+}
+
+/**
+ * Score against grind setting — PRD F3 R5, the variable-impact view.
+ *
+ * Only meaningful within one brewer and grinder, so callers should filter first.
+ * Sorted by setting so the trend reads left to right the way a dial does.
+ */
+export function byGrind(brews: BrewRecord[]): GrindBreakdown[] {
+  const groups = new Map<string, BrewRecord[]>()
+  for (const b of brews) {
+    if (!b.grindSetting) continue
+    const list = groups.get(b.grindSetting) ?? []
+    list.push(b)
+    groups.set(b.grindSetting, list)
+  }
+
+  return [...groups.entries()]
+    .map(([setting, list]) => {
+      const scored = list.filter((b) => typeof b.score === 'number')
+      const measured = list.filter((b) => typeof b.eyPct === 'number')
+      return {
+        setting,
+        count: list.length,
+        avgScore:
+          scored.length > 0
+            ? scored.reduce((s, b) => s + (b.score ?? 0), 0) / scored.length
+            : undefined,
+        avgEyPct:
+          measured.length > 0
+            ? measured.reduce((s, b) => s + (b.eyPct ?? 0), 0) / measured.length
+            : undefined,
+      }
+    })
+    .sort((a, b) => Number(a.setting) - Number(b.setting) || a.setting.localeCompare(b.setting))
+}
+
 export type Filters = {
   text?: string
   recipeId?: string

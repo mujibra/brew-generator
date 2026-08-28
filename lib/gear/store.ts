@@ -107,6 +107,31 @@ export function drawdownFromBrew(
   return 'normal'
 }
 
+/**
+ * Tags the log already carries, mapped to the symptom the dial-in asks about.
+ *
+ * Only the faults map — "sweet" and "balanced" are not complaints, so a brew
+ * tagged only with those yields nothing to diagnose. Order matters: the first
+ * match wins, and the strongest signals come first.
+ */
+const TAG_TO_SYMPTOM: [string, string][] = [
+  ['astringent', 'astringent'],
+  ['sour', 'sour'],
+  ['bitter', 'bitter'],
+  ['thin', 'thin'],
+  ['muddy', 'muddy'],
+  ['flat', 'flat'],
+  ['harsh', 'bitter'],
+]
+
+export function symptomFromBrew(brew: BrewRecord | undefined): string | undefined {
+  if (!brew?.tags?.length) return undefined
+  for (const [tag, symptom] of TAG_TO_SYMPTOM) {
+    if (brew.tags.includes(tag)) return symptom
+  }
+  return undefined
+}
+
 export function mostRecentBrew(brews: BrewRecord[]): BrewRecord | undefined {
   return brews.reduce<BrewRecord | undefined>(
     (best, b) => (!best || b.startedAt > best.startedAt ? b : best),

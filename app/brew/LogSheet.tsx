@@ -12,7 +12,8 @@ import {
 import { repository } from '@/lib/db/dexie'
 import type { BeanRecord } from '@/lib/db/repository'
 import type { SettingsRecord } from '@/lib/db/repository'
-import { clearPending, emptyGear } from '@/lib/gear/store'
+import { baselineFor, clearPending, emptyGear, grinderOf } from '@/lib/gear/store'
+import type { BrewerId } from '@/lib/recipes/brewers'
 import type { BuiltinRecipe } from '@/lib/recipes/builtin'
 import { beanAge, brewsLeft, consumeDose, summariseShelf } from '@/lib/shelf/bean'
 import Link from 'next/link'
@@ -55,15 +56,27 @@ export function LogSheet({
   const [beanId, setBeanId] = useState<string>(initialBeanId ?? '')
   const [gear, setGear] = useState<SettingsRecord | null>(null)
   const [verdict, setVerdict] = useState<'better' | 'worse' | 'same' | null>(null)
+  const [grind, setGrind] = useState('')
+
+  // The recipe's methodId doubles as the brewer key for baselines.
+  const brewerId = recipe.methodId as BrewerId
+  const grinder = grinderOf(gear ?? undefined)
 
   // If the user committed to a dial-in change, this is the moment they can
   // actually judge it (PRD F4 R3).
   useEffect(() => {
     repository()
       .settings.get('gear')
-      .then((row) => setGear(row ?? emptyGear(Date.now())))
+      .then((row) => {
+        const g = row ?? emptyGear(Date.now())
+        setGear(g)
+        // Pre-fill from your baseline for this brewer: most brews are at it, and
+        // the ones that are not are exactly the ones worth recording.
+        const baseline = baselineFor(g, recipe.methodId as BrewerId)
+        if (baseline !== undefined) setGrind(String(baseline))
+      })
       .catch(() => setGear(null))
-  }, [])
+  }, [recipe.methodId])
 
   // Which bag was this? Attaching it is what turns the journal into per-bag
   // history and lets the shelf decrement itself (PRD F5 R4).
@@ -111,6 +124,8 @@ export function LogSheet({
         startedAt: session.startedAtEpoch ?? now,
         recipeId: recipe.id,
         ...(bean ? { beanId: bean.id } : {}),
+        ...(grind.trim() === '' ? {} : { grindSetting: grind.trim() }),
+        ...(gear?.grinderId ? { grinderId: gear.grinderId } : {}),
         ...(age !== undefined ? { daysOffRoast: age } : {}),
         doseG: recipe.doseG,
         waterG,
@@ -259,6 +274,47 @@ export function LogSheet({
             })()}
         </div>
       )}
+
+      <div className="mt-8">
+        <label
+          htmlFor="grind"
+          className="text-sm uppercase tracking-widest text-[var(--color-muted)]"
+        >
+          Grind setting
+        </label>
+        <span className="mt-2 flex items-center gap-3">
+          <input
+            id="grind"
+            type="number"
+            inputMode="decimal"
+            min={0}
+            value={grind}
+            onChange={(e) => setGrind(e.target.value)}
+            placeholder={grinder ? '—' : 'optional'}
+            className="w-28 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-3 tabular-nums"
+          />
+          <span className="text-sm text-[var(--color-muted)]">
+            {grinder ? `${grinder.unitLabel} on your ${grinder.name}` : 'clicks or steps'}
+          </span>
+        </span>
+        <p className="mt-2 text-sm text-[var(--color-faint)]">
+          {(() => {
+            const baseline = baselineFor(gear ?? undefined, brewerId)
+            const current = grind.trim() === '' ? undefined : Number(grind)
+            if (baseline === undefined) {
+              return grinder
+                ? 'Set a baseline in Gear and this fills itself in.'
+                : 'Recording this is what lets the journal show which settings actually score well.'
+            }
+            if (current === undefined || !Number.isFinite(current)) {
+              return `Your ${brewerId} baseline is ${baseline}.`
+            }
+            const delta = current - baseline
+            if (delta === 0) return `At your baseline of ${baseline}.`
+            return `${Math.abs(delta)} ${grinder?.unitLabel ?? 'steps'} ${delta > 0 ? 'coarser' : 'finer'} than your baseline of ${baseline}.`
+          })()}
+        </p>
+      </div>
 
       <div className="mt-8">
         <label

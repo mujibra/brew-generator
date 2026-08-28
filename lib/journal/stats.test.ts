@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { exportFilename, toCsv, toJson } from './export'
 import {
   MIN_POINTS_FOR_CENTROID,
+  byGrind,
   byRecipe,
   chartPoints,
   describeZone,
@@ -304,5 +305,38 @@ describe('exportFilename', () => {
       'extraction-journal-2026-01-05.csv',
     )
     expect(exportFilename('json', NOON)).toBe('extraction-journal-2026-08-20.json')
+  })
+})
+
+describe('byGrind', () => {
+  it('groups by setting and averages score and yield', () => {
+    const rows = byGrind([
+      brew({ grindSetting: '44', score: 9, eyPct: 20.1 }),
+      brew({ grindSetting: '44', score: 8, eyPct: 19.9 }),
+      brew({ grindSetting: '47', score: 5, eyPct: 17.2 }),
+    ])
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toMatchObject({ setting: '44', count: 2, avgScore: 8.5 })
+    expect(rows[0]!.avgEyPct).toBeCloseTo(20, 6)
+    expect(rows[1]).toMatchObject({ setting: '47', count: 1, avgScore: 5 })
+  })
+
+  it('sorts numerically, so the trend reads like the dial', () => {
+    const rows = byGrind([
+      brew({ grindSetting: '100', score: 7 }),
+      brew({ grindSetting: '9', score: 7 }),
+      brew({ grindSetting: '20', score: 7 }),
+    ])
+    expect(rows.map((r) => r.setting)).toEqual(['9', '20', '100'])
+  })
+
+  it('ignores brews with no grind recorded', () => {
+    expect(byGrind([brew(), brew({ score: 8 })])).toEqual([])
+  })
+
+  it('leaves averages undefined rather than zero when nothing is scored', () => {
+    const rows = byGrind([brew({ grindSetting: '44' })])
+    expect(rows[0]!.avgScore).toBeUndefined()
+    expect(rows[0]!.avgEyPct).toBeUndefined()
   })
 })

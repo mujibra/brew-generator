@@ -83,8 +83,10 @@ Working:
   altitude, days off roast and what you want in the cup: pour count, grams per
   pour, timings, grind and temperature, each with its reasoning attached.
 - **/dial-in** — symptom to one action, in your grinder's own clicks, with the
-  full ranking in expert mode. Prefills the drawdown answer from your last brew,
-  and remembers what you have already tried.
+  full ranking in expert mode. Diagnoses a specific brew when the journal sends
+  one (`/dial-in/?brew=<id>`), prefilling the symptom from its tags and the
+  drawdown from its time, and showing the grind move in absolute terms
+  (47 → 44 clicks). Remembers what you have already tried.
 - **/gear** — your grinder and your own baseline setting per brewer.
 - **/learn** — 18 knowledge cards on extraction, grind, roast, water and tasting,
   searchable by symptom ("flat", "drying") rather than by jargon. Each has a
@@ -127,6 +129,14 @@ Card bodies are rendered by a ~60-line renderer in `CardView.tsx` handling
 paragraphs, bullets, pipe tables, indented formula blocks and bold. The bodies
 are authored in-repo so the formatting they use is finite; a markdown library
 would be more code than the renderer.
+
+## Grind settings
+
+The brew log captures the grind setting, pre-filled from your Gear baseline for
+that brewer and showing the offset as you change it ("3 clicks finer than your
+baseline of 44"). That single field is what makes two things possible: the
+journal's score-against-grind breakdown, and a dial-in recommendation phrased as
+absolute numbers rather than a direction.
 
 ## The dial-in confirm loop
 

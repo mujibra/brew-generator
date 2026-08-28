@@ -7,6 +7,7 @@ import type { BrewRecord } from '@/lib/db/repository'
 import { exportFilename, toCsv, toJson } from '@/lib/journal/export'
 import {
   type Filters,
+  byGrind,
   byRecipe,
   chartPoints,
   describeZone,
@@ -49,6 +50,12 @@ export function JournalView() {
   const visible = useMemo(() => filterBrews(brews ?? [], filters), [brews, filters])
   const points = useMemo(() => chartPoints(visible), [visible])
   const recipes = useMemo(() => byRecipe(brews ?? []), [brews])
+  // Grind only compares meaningfully within one recipe, so this appears once a
+  // recipe filter is on and there is more than one setting to compare.
+  const grinds = useMemo(
+    () => (filters.recipeId ? byGrind(visible) : []),
+    [filters.recipeId, visible],
+  )
   const selected = visible.find((b) => b.id === selectedId)
 
   async function update(id: string, patch: Partial<BrewRecord>) {
@@ -179,6 +186,41 @@ export function JournalView() {
         </section>
       )}
 
+      {/* --- Which grind setting actually works. PRD F3 R5. */}
+      {grinds.length > 1 && (
+        <section className="mt-8">
+          <h2 className="mb-1 text-xs font-medium uppercase tracking-widest text-[var(--color-muted)]">
+            How your grind settings score
+          </h2>
+          <p className="mb-3 text-sm text-[var(--color-faint)]">
+            Within {recipeName(filters.recipeId)} only — grind numbers do not compare across
+            brewers.
+          </p>
+          <ul className="space-y-2">
+            {grinds.map((g) => (
+              <li
+                key={g.setting}
+                className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3"
+              >
+                <span className="min-w-0">
+                  <span className="block font-medium tabular-nums">{g.setting}</span>
+                  <span className="block text-sm text-[var(--color-faint)]">
+                    {g.count} brew{g.count === 1 ? '' : 's'}
+                    {g.avgEyPct !== undefined && ` · ${g.avgEyPct.toFixed(1)} % EY`}
+                  </span>
+                </span>
+                <span className="shrink-0 text-right tabular-nums">
+                  <span className="block text-lg font-semibold">
+                    {g.avgScore ? g.avgScore.toFixed(1) : '—'}
+                  </span>
+                  <span className="block text-xs text-[var(--color-faint)]">avg</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* --- Filters */}
       <section className="mt-8">
         <h2 className="mb-3 text-xs font-medium uppercase tracking-widest text-[var(--color-muted)]">
@@ -261,6 +303,7 @@ export function JournalView() {
                     {b.doseG}:{b.waterG}
                     {' · '}
                     {formatElapsed(b.totalTimeS * 1000)}
+                    {b.grindSetting && ` · grind ${b.grindSetting}`}
                     {b.eyPct !== undefined && ` · ${b.eyPct.toFixed(1)} % EY`}
                   </span>
                 </span>
@@ -339,6 +382,7 @@ function Detail({
         <Fact label="Ratio" value={`1:${(brew.waterG / brew.doseG).toFixed(1)}`} />
         <Fact label="Time" value={formatElapsed(brew.totalTimeS * 1000)} />
         {brew.waterTempC !== undefined && <Fact label="Temp" value={`${brew.waterTempC} °C`} />}
+        {brew.grindSetting && <Fact label="Grind" value={brew.grindSetting} />}
         {brew.tdsPct !== undefined && <Fact label="TDS" value={`${brew.tdsPct} %`} />}
         {brew.eyPct !== undefined && <Fact label="Yield" value={`${brew.eyPct.toFixed(1)} %`} />}
         {brew.beverageG !== undefined && <Fact label="In the cup" value={`${brew.beverageG} g`} />}
@@ -401,7 +445,7 @@ function Detail({
 
       <div className="mt-4 flex gap-2">
         <Link
-          href="/dial-in/"
+          href={`/dial-in/?brew=${brew.id}`}
           className="tap compact flex-1 rounded-xl border border-[var(--color-line)] px-4 text-center text-sm leading-10"
         >
           Dial this in

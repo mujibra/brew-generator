@@ -44,6 +44,11 @@ export type Recommendation = {
   reasoning: string[]
   /** Full ranking, for expert mode (PRD F4 R5). */
   ranking: Ranked[]
+  /**
+   * The grind move in whole grinder units, when that is the lever. Lets the UI
+   * show the absolute setting alongside the relative instruction.
+   */
+  grindUnits?: { delta: number; direction: 'finer' | 'coarser'; unitLabel: string }
 }
 
 /** PRD F4.4: three consecutive no-change results must escalate elsewhere. */
@@ -161,8 +166,19 @@ export function diagnose(input: {
   }
 
   const top = viable[0]!
+  const lever = top.hypothesis.lever
+  const grindUnits =
+    lever.kind === 'grind' && input.grinder.micronsPerUnit && input.grinder.micronsPerUnit > 0
+      ? {
+          delta: Math.max(1, Math.round(lever.micronDelta / input.grinder.micronsPerUnit)),
+          direction: lever.direction,
+          unitLabel: input.grinder.unitLabel,
+        }
+      : undefined
+
   return {
     hypothesis: top.hypothesis,
+    ...(grindUnits ? { grindUnits } : {}),
     action: actionFor(top.hypothesis, input.grinder),
     prediction: top.hypothesis.prediction,
     mechanismCardId: top.hypothesis.mechanismCardId,

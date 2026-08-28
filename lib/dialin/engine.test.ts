@@ -220,3 +220,26 @@ describe('diagnose — convergence loop', () => {
     ).toThrow(/No viable hypothesis/)
   })
 })
+
+describe('grindUnits — the absolute numbers the journal can anchor to', () => {
+  it('reports the move in whole grinder units', () => {
+    const r = diagnose({ evidence: { symptom: 'sour', drawdown: 'fast' }, grinder: jUltra })
+    // 40 µm target / 12.5 µm per click = 3 clicks
+    expect(r.grindUnits).toEqual({ delta: 3, direction: 'finer', unitLabel: 'clicks' })
+  })
+
+  it('points coarser when over-extracted', () => {
+    const r = diagnose({ evidence: { symptom: 'harshWhenCool' }, grinder: jUltra })
+    expect(r.grindUnits?.direction).toBe('coarser')
+  })
+
+  it('is absent when the lever is not grind', () => {
+    expect(diagnose({ evidence: { symptom: 'thin' }, grinder: jUltra }).grindUnits).toBeUndefined()
+  })
+
+  it('is absent without a credible step size, so no false precision', () => {
+    const r = diagnose({ evidence: { symptom: 'sour', drawdown: 'fast' }, grinder: unknownGrinder })
+    expect(r.grindUnits).toBeUndefined()
+    expect(r.action).toMatch(/2-3 steps/)
+  })
+})

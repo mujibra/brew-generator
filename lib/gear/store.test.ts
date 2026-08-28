@@ -12,6 +12,7 @@ import {
   setBaseline,
   setGrinder,
   setPending,
+  symptomFromBrew,
 } from './store'
 
 const NOW = 1_800_000_000_000
@@ -191,5 +192,29 @@ describe('mostRecentBrew', () => {
 
   it('is undefined for an empty journal', () => {
     expect(mostRecentBrew([])).toBeUndefined()
+  })
+})
+
+describe('symptomFromBrew', () => {
+  it('reads the fault straight off the tags', () => {
+    expect(symptomFromBrew(brew({ tags: ['sour'] }))).toBe('sour')
+    expect(symptomFromBrew(brew({ tags: ['bitter'] }))).toBe('bitter')
+    expect(symptomFromBrew(brew({ tags: ['thin'] }))).toBe('thin')
+    expect(symptomFromBrew(brew({ tags: ['flat'] }))).toBe('flat')
+  })
+
+  // Praise is not a complaint, so there is nothing to diagnose.
+  it('ignores positive tags', () => {
+    expect(symptomFromBrew(brew({ tags: ['sweet', 'balanced', 'clean'] }))).toBeUndefined()
+  })
+
+  it('prefers astringency, which is the most specific signal', () => {
+    expect(symptomFromBrew(brew({ tags: ['bitter', 'astringent'] }))).toBe('astringent')
+  })
+
+  it('says nothing without tags', () => {
+    expect(symptomFromBrew(brew())).toBeUndefined()
+    expect(symptomFromBrew(brew({ tags: [] }))).toBeUndefined()
+    expect(symptomFromBrew(undefined)).toBeUndefined()
   })
 })

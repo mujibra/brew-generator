@@ -32,7 +32,7 @@ export default function CustomBrewPage() {
         </p>
         <Link
           href="/brew/build/"
-          className="tap mt-8 rounded-2xl bg-[var(--color-accent)] py-5 text-center text-lg font-semibold text-[var(--color-on-accent)]"
+          className="tap mt-8 rounded-lg bg-[var(--color-accent)] py-5 text-center text-lg font-semibold text-[var(--color-on-accent)]"
         >
           Build a recipe
         </Link>

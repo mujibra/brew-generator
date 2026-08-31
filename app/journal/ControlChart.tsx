@@ -97,14 +97,15 @@ export function ControlChart({
           rx={2}
         />
         <text
-          x={boxX + boxW / 2}
-          y={boxY - 4}
-          textAnchor="middle"
+          x={boxX + 3}
+          y={boxY - 5}
+          textAnchor="start"
           fontSize={8}
+          fontWeight={600}
+          letterSpacing={0.4}
           fill="var(--color-good-ink)"
-          opacity={0.9}
         >
-          Golden Cup
+          GOLDEN CUP
         </text>
 
         {/* Axes */}
@@ -183,12 +184,14 @@ export function ControlChart({
             />
             <text
               x={x(centroid.eyPct)}
-              y={y(centroid.tdsPct) - 20}
+              y={y(centroid.tdsPct) - 22}
               textAnchor="middle"
               fontSize={8}
+              fontWeight={700}
+              letterSpacing={0.4}
               fill="var(--color-accent)"
             >
-              your zone
+              YOUR ZONE
             </text>
           </>
         )}

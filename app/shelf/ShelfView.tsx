@@ -1,5 +1,7 @@
 'use client'
 
+import { PageBody, PageHeader } from '@/app/components/ui'
+
 import type { FreshnessState } from '@/lib/calc/freshness'
 import { repository } from '@/lib/db/dexie'
 import type { BeanRecord, BrewRecord } from '@/lib/db/repository'
@@ -100,7 +102,7 @@ export function ShelfView() {
   return (
     <Shell>
       {beans.length === 0 ? (
-        <div className="mt-12 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-6 text-center">
+        <div className="mt-12 rounded-lg bg-[var(--color-surface)] p-6 text-center">
           <h2 className="text-xl font-semibold">No beans on the shelf</h2>
           <p className="mt-2 text-[var(--color-muted)]">
             Add a bag and the app tracks its freshness, what is left, and how your brews from it
@@ -109,7 +111,7 @@ export function ShelfView() {
           <button
             type="button"
             onClick={() => setEditing(emptyBean(crypto.randomUUID(), Date.now()))}
-            className="mt-6 rounded-2xl bg-[var(--color-accent)] px-6 py-3 font-semibold text-[var(--color-on-accent)]"
+            className="mt-6 rounded-lg bg-[var(--color-accent)] px-6 py-3 font-semibold text-[var(--color-on-accent)]"
           >
             Add a bag
           </button>
@@ -127,7 +129,7 @@ export function ShelfView() {
           </div>
 
           {shelf.lowStock.length > 0 && (
-            <p className="mt-3 rounded-xl border border-[var(--color-warn)] px-4 py-3 text-sm text-[var(--color-warn)]">
+            <p className="mt-3 rounded-lg bg-[var(--color-warn-block)] px-4 py-3 text-sm font-medium text-[var(--color-warn)]">
               {shelf.lowStock.map((b) => b.name || 'Unnamed bag').join(', ')} —{' '}
               {shelf.lowStock.length === 1 ? 'down to its' : 'down to their'} last couple of brews.
             </p>
@@ -175,7 +177,7 @@ export function ShelfView() {
           <button
             type="button"
             onClick={() => setEditing(emptyBean(crypto.randomUUID(), Date.now()))}
-            className="mt-6 w-full rounded-2xl bg-[var(--color-accent)] py-4 font-semibold text-[var(--color-on-accent)]"
+            className="mt-6 w-full rounded-lg bg-[var(--color-accent)] py-4 font-semibold text-[var(--color-on-accent)]"
           >
             Add a bag
           </button>
@@ -215,10 +217,10 @@ function BeanCard({
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className={`w-full rounded-2xl border px-4 py-3 text-left ${
+        className={`w-full rounded-lg border-l-4 px-4 py-3 text-left transition-all duration-200 ${
           open
             ? 'border-[var(--color-accent)] bg-[var(--color-raised)]'
-            : 'border-[var(--color-line)] bg-[var(--color-surface)]'
+            : 'border-transparent bg-[var(--color-surface)] hover:bg-[var(--color-raised)]'
         }`}
       >
         <span className="flex items-baseline justify-between gap-3">
@@ -270,7 +272,7 @@ function BeanCard({
       </button>
 
       {open && (
-        <div className="mt-2 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+        <div className="mt-2 rounded-lg bg-[var(--color-surface)] p-4">
           {fresh ? (
             <p className="text-sm">
               <span className="text-[var(--color-ink)]">{FRESHNESS_COPY[fresh.state].label}. </span>
@@ -314,21 +316,21 @@ function BeanCard({
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
               href={`/brew/build/?bean=${bean.id}`}
-              className="tap compact flex-1 rounded-xl bg-[var(--color-accent)] px-4 text-center text-sm font-semibold leading-10 text-[var(--color-on-accent)]"
+              className="tap compact flex-1 rounded-lg bg-[var(--color-accent)] px-4 text-center text-sm font-semibold leading-10 text-[var(--color-on-accent)]"
             >
               Build a recipe for this
             </Link>
             <button
               type="button"
               onClick={onEdit}
-              className="compact rounded-xl border border-[var(--color-line)] px-4 text-sm"
+              className="compact rounded-lg px-4 text-sm bg-[var(--color-raised)] font-semibold transition-all duration-200 hover:bg-[var(--color-line)]"
             >
               Edit
             </button>
             <button
               type="button"
               onClick={() => onPatch(bean.id, { archived: !bean.archived })}
-              className="compact rounded-xl border border-[var(--color-line)] px-4 text-sm text-[var(--color-muted)]"
+              className="compact rounded-lg px-4 text-sm text-[var(--color-muted)] hover:text-[var(--color-ink)] bg-[var(--color-raised)] font-semibold transition-all duration-200 hover:bg-[var(--color-line)]"
             >
               {bean.archived ? 'Unarchive' : 'Archive'}
             </button>
@@ -340,10 +342,10 @@ function BeanCard({
               <button
                 type="button"
                 onClick={() => onPatch(bean.id, { wouldBuyAgain: true })}
-                className={`compact rounded-full border px-4 text-sm ${
+                className={`compact rounded-full px-4 text-sm transition-all duration-200 ${
                   bean.wouldBuyAgain === true
-                    ? 'border-[var(--color-accent)] bg-[var(--color-raised)]'
-                    : 'border-[var(--color-line)]'
+                    ? 'bg-[var(--color-accent)] font-semibold text-[var(--color-on-accent)]'
+                    : 'bg-[var(--color-surface)] text-[var(--color-muted)] hover:bg-[var(--color-raised)] hover:text-[var(--color-ink)]'
                 }`}
               >
                 Yes
@@ -351,10 +353,10 @@ function BeanCard({
               <button
                 type="button"
                 onClick={() => onPatch(bean.id, { wouldBuyAgain: false })}
-                className={`compact rounded-full border px-4 text-sm ${
+                className={`compact rounded-full px-4 text-sm transition-all duration-200 ${
                   bean.wouldBuyAgain === false
-                    ? 'border-[var(--color-accent)] bg-[var(--color-raised)]'
-                    : 'border-[var(--color-line)]'
+                    ? 'bg-[var(--color-raised)] font-semibold text-[var(--color-ink)]'
+                    : 'bg-[var(--color-surface)] text-[var(--color-muted)] hover:bg-[var(--color-raised)] hover:text-[var(--color-ink)]'
                 }`}
               >
                 No
@@ -426,7 +428,7 @@ function BeanForm({
             onChange={(e) =>
               set('roastDate', e.target.value ? new Date(e.target.value).toISOString() : undefined)
             }
-            className="mt-1 w-full rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-3"
+            className="mt-1 w-full rounded-lg bg-[var(--color-surface)] px-3"
           />
           <span className="mt-1 block text-xs text-[var(--color-faint)]">
             Roasted-on, not best-before. This drives the whole freshness model.
@@ -441,10 +443,10 @@ function BeanForm({
                 key={r.id}
                 type="button"
                 onClick={() => set('roastLevel', draft.roastLevel === r.id ? undefined : r.id)}
-                className={`compact rounded-full border px-4 text-sm ${
+                className={`compact rounded-full px-4 text-sm transition-all duration-200 ${
                   draft.roastLevel === r.id
-                    ? 'border-[var(--color-accent)] bg-[var(--color-raised)]'
-                    : 'border-[var(--color-line)]'
+                    ? 'bg-[var(--color-accent)] font-semibold text-[var(--color-on-accent)]'
+                    : 'bg-[var(--color-surface)] text-[var(--color-muted)] hover:bg-[var(--color-raised)] hover:text-[var(--color-ink)]'
                 }`}
               >
                 {r.label}
@@ -504,7 +506,7 @@ function BeanForm({
               value={altitudeText}
               onChange={(e) => setAltitudeText(e.target.value)}
               placeholder="1800"
-              className="mt-1 w-full rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-3 tabular-nums"
+              className="mt-1 w-full rounded-lg bg-[var(--color-surface)] px-3 tabular-nums"
             />
             <span className="mt-1 text-sm text-[var(--color-muted)]">masl</span>
           </span>
@@ -520,7 +522,7 @@ function BeanForm({
             onChange={(e) => set('roasterNotes', e.target.value || undefined)}
             rows={2}
             placeholder="Blackcurrant, tomato leaf, brown sugar"
-            className="mt-1 w-full rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-3 text-sm"
+            className="mt-1 w-full rounded-lg bg-[var(--color-surface)] p-3 text-sm"
           />
         </label>
       </div>
@@ -541,14 +543,14 @@ function BeanForm({
             })
           }
           disabled={draft.name.trim() === ''}
-          className="flex-1 rounded-2xl bg-[var(--color-accent)] py-4 font-semibold text-[var(--color-on-accent)] disabled:opacity-50"
+          className="flex-1 rounded-lg bg-[var(--color-accent)] py-4 font-semibold text-[var(--color-on-accent)] disabled:opacity-50"
         >
           Save
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-2xl border border-[var(--color-line)] px-6"
+          className="rounded-lg px-6 bg-[var(--color-raised)] font-semibold transition-all duration-200 hover:bg-[var(--color-line)]"
         >
           Cancel
         </button>
@@ -558,7 +560,7 @@ function BeanForm({
         <button
           type="button"
           onClick={onDelete}
-          className="mt-3 w-full rounded-2xl border border-[var(--color-line)] py-3 text-sm text-[var(--color-muted)]"
+          className="mt-3 w-full rounded-lg py-3 text-sm text-[var(--color-muted)] hover:text-[var(--color-ink)] bg-[var(--color-raised)] font-semibold transition-all duration-200 hover:bg-[var(--color-line)]"
         >
           Delete this bag
         </button>
@@ -569,19 +571,16 @@ function BeanForm({
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto max-w-2xl px-5 py-8">
-      <Link href="/" className="text-sm text-[var(--color-muted)]">
-        ← Extraction
-      </Link>
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight">Shelf</h1>
-      {children}
+    <main>
+      <PageHeader title="Shelf" />
+      <PageBody>{children}</PageBody>
     </main>
   )
 }
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: 'warn' }) {
   return (
-    <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-3 py-3">
+    <div className="rounded-lg bg-[var(--color-surface)] px-3 py-3">
       <p className="text-[10px] uppercase tracking-widest text-[var(--color-faint)]">{label}</p>
       <p
         className={`mt-1 text-xl font-semibold tabular-nums ${
@@ -622,7 +621,7 @@ function TextField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="mt-1 w-full rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-3"
+        className="mt-1 w-full rounded-lg bg-[var(--color-surface)] px-3"
       />
     </label>
   )
@@ -666,7 +665,7 @@ function NumberField({
           const n = Number(value)
           if (value.trim() !== '' && Number.isFinite(n) && String(n) !== value) onChange(String(n))
         }}
-        className="mt-1 w-full rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-3 tabular-nums"
+        className="mt-1 w-full rounded-lg bg-[var(--color-surface)] px-3 tabular-nums"
       />
     </label>
   )

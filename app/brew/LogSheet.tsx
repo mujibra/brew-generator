@@ -202,14 +202,14 @@ export function LogSheet({
         <div className="mt-8 grid gap-3">
           <Link
             href="/dial-in/"
-            className="tap rounded-2xl bg-[var(--color-accent)] py-5 text-center text-lg font-semibold text-[var(--color-on-accent)]"
+            className="tap rounded-lg bg-[var(--color-accent)] py-5 text-center text-lg font-semibold text-[var(--color-on-accent)]"
           >
             Something was off — dial it in
           </Link>
           <button
             type="button"
             onClick={onDone}
-            className="rounded-2xl border border-[var(--color-line)] py-5 text-lg"
+            className="rounded-lg py-5 text-lg bg-[var(--color-raised)] font-semibold transition-all duration-200 hover:bg-[var(--color-line)]"
           >
             Brew this again
           </button>
@@ -230,7 +230,7 @@ export function LogSheet({
       </p>
 
       {gear?.pendingHypothesis && (
-        <div className="mt-8 rounded-2xl border border-[var(--color-accent)] bg-[var(--color-surface)] p-4">
+        <div className="mt-8 rounded-lg bg-[var(--color-accent-soft)] p-4">
           <p className="text-sm uppercase tracking-widest text-[var(--color-muted)]">
             You were testing
           </p>
@@ -248,10 +248,10 @@ export function LogSheet({
                 key={id}
                 type="button"
                 onClick={() => setVerdict(verdict === id ? null : id)}
-                className={`compact rounded-full border px-4 text-sm ${
+                className={`compact rounded-full px-4 text-sm transition-all duration-200 ${
                   verdict === id
-                    ? 'border-[var(--color-accent)] bg-[var(--color-raised)]'
-                    : 'border-[var(--color-line)] text-[var(--color-muted)]'
+                    ? 'bg-[var(--color-accent)] font-semibold text-[var(--color-on-accent)]'
+                    : 'bg-[var(--color-surface)] text-[var(--color-muted)] hover:bg-[var(--color-raised)] hover:text-[var(--color-ink)]'
                 }`}
               >
                 {label}
@@ -321,7 +321,7 @@ export function LogSheet({
             value={grind}
             onChange={(e) => setGrind(e.target.value)}
             placeholder={grinder ? '—' : 'optional'}
-            className="w-28 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-3 tabular-nums"
+            className="w-28 rounded-lg bg-[var(--color-surface)] px-3 tabular-nums"
           />
           <span className="text-sm text-[var(--color-muted)]">
             {grinder ? `${grinder.unitLabel} on your ${grinder.name}` : 'clicks or steps'}
@@ -392,10 +392,10 @@ export function LogSheet({
               key={t}
               type="button"
               onClick={() => setTags((v) => (v.includes(t) ? v.filter((x) => x !== t) : [...v, t]))}
-              className={`rounded-full border px-4 py-2 text-sm ${
+              className={`rounded-full px-4 py-2 text-sm transition-all duration-200 ${
                 tags.includes(t)
-                  ? 'border-[var(--color-accent)] bg-[var(--color-surface)]'
-                  : 'border-[var(--color-line)]'
+                  ? 'bg-[var(--color-accent)] font-semibold text-[var(--color-on-accent)]'
+                  : 'bg-[var(--color-surface)] text-[var(--color-muted)] hover:bg-[var(--color-raised)] hover:text-[var(--color-ink)]'
               }`}
             >
               {t}
@@ -404,7 +404,7 @@ export function LogSheet({
         </div>
       </fieldset>
 
-      <details className="mt-8 rounded-2xl border border-[var(--color-line)] p-4">
+      <details className="mt-8 rounded-lg bg-[var(--color-surface)] p-4">
         <summary className="cursor-pointer text-sm uppercase tracking-widest text-[var(--color-muted)]">
           Measured (optional)
         </summary>
@@ -418,7 +418,7 @@ export function LogSheet({
               value={tds}
               onChange={(e) => setTds(e.target.value)}
               placeholder="1.35"
-              className="w-28 rounded-xl border border-[var(--color-line)] bg-transparent px-3 tabular-nums"
+              className="w-28 tabular-nums rounded-lg bg-[var(--color-raised)] px-3 outline-none transition-colors duration-200 focus:bg-[var(--color-bg)] focus:ring-2 focus:ring-[var(--color-accent)]"
             />
           </label>
           <label className="flex items-center justify-between gap-3">
@@ -429,7 +429,7 @@ export function LogSheet({
               value={beverageG}
               onChange={(e) => setBeverageG(e.target.value)}
               placeholder="estimated"
-              className="w-28 rounded-xl border border-[var(--color-line)] bg-transparent px-3 tabular-nums"
+              className="w-28 tabular-nums rounded-lg bg-[var(--color-raised)] px-3 outline-none transition-colors duration-200 focus:bg-[var(--color-bg)] focus:ring-2 focus:ring-[var(--color-accent)]"
             />
           </label>
 
@@ -456,7 +456,7 @@ export function LogSheet({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
-          className="mt-3 w-full rounded-xl border border-[var(--color-line)] bg-transparent p-3"
+          className="mt-3 w-full p-3 rounded-lg bg-[var(--color-raised)] outline-none transition-colors duration-200 focus:bg-[var(--color-bg)] focus:ring-2 focus:ring-[var(--color-accent)]"
         />
       </label>
 
@@ -468,7 +468,7 @@ export function LogSheet({
         type="button"
         onClick={save}
         disabled={saved === 'saving'}
-        className="mt-8 w-full rounded-2xl bg-[var(--color-accent)] py-5 text-lg font-semibold text-[var(--color-on-accent)] disabled:opacity-60"
+        className="mt-8 w-full rounded-lg bg-[var(--color-accent)] py-5 text-lg font-semibold text-[var(--color-on-accent)] disabled:opacity-60"
       >
         {saved === 'saving' ? 'Saving…' : 'Save to journal'}
       </button>

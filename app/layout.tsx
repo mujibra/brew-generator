@@ -1,8 +1,22 @@
 import type { Metadata, Viewport } from 'next'
+import { Outfit } from 'next/font/google'
 import type { ReactNode } from 'react'
 import { InstallPrompt } from './InstallPrompt'
 import { ServiceWorker } from './ServiceWorker'
 import './globals.css'
+
+/*
+ * Outfit: geometric, so its letterforms echo the rectangles the interface is
+ * built from. Self-hosted at build time by next/font, which keeps the static
+ * export offline-capable — a runtime request to fonts.googleapis.com would
+ * fail on a phone in a kitchen with no signal.
+ */
+const outfit = Outfit({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-outfit',
+  display: 'swap',
+})
 
 /** Next prefixes <Link> and asset imports automatically; metadata URLs it does not. */
 const base = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
@@ -38,7 +52,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={outfit.variable}>
       <body className="min-h-dvh">
         {children}
         <ServiceWorker />

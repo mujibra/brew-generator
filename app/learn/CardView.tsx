@@ -1,5 +1,6 @@
 'use client'
 
+import { PageBody, PageHeader } from '@/app/components/ui'
 import { cardById } from '@/lib/learn/cards'
 import { CONFIDENCE_LABELS, type Card, type Depth } from '@/lib/learn/types'
 import Link from 'next/link'
@@ -17,107 +18,111 @@ export function CardView({ card }: { card: Card }) {
   const hasDeep = Boolean(card.body.deep)
 
   return (
-    <main className="mx-auto max-w-2xl px-5 py-8">
-      <Link href="/learn/" className="text-sm text-[var(--color-muted)]">
-        ← Learn
-      </Link>
+    <main>
+      <PageHeader
+        back={{ href: '/learn/', label: 'Learn' }}
+        title={card.name}
+        lead={card.summary}
+      />
+      <PageBody>
+        {/* The implication leads, because a fact without one is trivia. */}
+        <div className="rounded-lg bg-[var(--color-accent-soft)] p-4">
+          <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">
+            What this changes
+          </p>
+          <p className="mt-2">{card.practicalImplication}</p>
+        </div>
 
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight">{card.name}</h1>
-      <p className="mt-3 text-lg text-[var(--color-muted)]">{card.summary}</p>
+        <div
+          role="tablist"
+          aria-label="Reading depth"
+          className="mt-8 flex gap-1 rounded-full bg-[var(--color-surface)] p-1"
+        >
+          {(
+            [
+              ['quick', 'Quick'],
+              ['standard', 'Standard'],
+              ['deep', 'Deep'],
+            ] as [Depth, string][]
+          )
+            .filter(([id]) => id !== 'deep' || hasDeep)
+            .map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={depth === id}
+                onClick={() => setDepth(id)}
+                className={`compact flex-1 rounded-full text-sm ${
+                  depth === id
+                    ? 'bg-[var(--color-accent)] font-semibold text-[var(--color-on-accent)]'
+                    : 'text-[var(--color-muted)]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+        </div>
 
-      {/* The implication leads, because a fact without one is trivia. */}
-      <div className="mt-6 rounded-2xl border border-[var(--color-accent)] bg-[var(--color-surface)] p-4">
-        <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">
-          What this changes
-        </p>
-        <p className="mt-2">{card.practicalImplication}</p>
-      </div>
+        <Prose
+          text={depth === 'deep' ? (card.body.deep ?? card.body.standard) : card.body[depth]}
+        />
 
-      <div
-        role="tablist"
-        aria-label="Reading depth"
-        className="mt-8 flex gap-1 rounded-full border border-[var(--color-line)] p-1"
-      >
-        {(
-          [
-            ['quick', 'Quick'],
-            ['standard', 'Standard'],
-            ['deep', 'Deep'],
-          ] as [Depth, string][]
-        )
-          .filter(([id]) => id !== 'deep' || hasDeep)
-          .map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={depth === id}
-              onClick={() => setDepth(id)}
-              className={`compact flex-1 rounded-full text-sm ${
-                depth === id
-                  ? 'bg-[var(--color-accent)] font-semibold text-[var(--color-on-accent)]'
-                  : 'text-[var(--color-muted)]'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-      </div>
+        {card.related.length > 0 && (
+          <section className="mt-10">
+            <h2 className="mb-3 text-xs font-medium uppercase tracking-widest text-[var(--color-muted)]">
+              Related
+            </h2>
+            <ul className="space-y-2">
+              {card.related.map((id) => {
+                const other = cardById(id)
+                if (!other) return null
+                return (
+                  <li key={id}>
+                    <Link
+                      href={`/learn/${id}/`}
+                      className="tap block rounded-lg bg-[var(--color-surface)] px-4 py-3"
+                    >
+                      <span className="block font-medium">{other.name}</span>
+                      <span className="block text-sm text-[var(--color-muted)]">
+                        {other.summary}
+                      </span>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )}
 
-      <Prose text={depth === 'deep' ? (card.body.deep ?? card.body.standard) : card.body[depth]} />
-
-      {card.related.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-widest text-[var(--color-muted)]">
-            Related
-          </h2>
-          <ul className="space-y-2">
-            {card.related.map((id) => {
-              const other = cardById(id)
-              if (!other) return null
-              return (
-                <li key={id}>
-                  <Link
-                    href={`/learn/${id}/`}
-                    className="tap block rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3"
-                  >
-                    <span className="block font-medium">{other.name}</span>
-                    <span className="block text-sm text-[var(--color-muted)]">{other.summary}</span>
-                  </Link>
-                </li>
-              )
-            })}
+        {/* PRD F11 R6: sources, confidence, and when this was last looked at. */}
+        <footer className="mt-10 rounded-lg bg-[var(--color-surface)] p-4">
+          <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">Sources</p>
+          <ul className="mt-2 space-y-1 text-sm text-[var(--color-muted)]">
+            {card.sources.map((s) => (
+              <li key={s.title}>
+                {s.title}
+                {s.author && <span> — {s.author}</span>}
+                {s.year && <span> ({s.year})</span>}
+                <span className="text-[var(--color-faint)]"> · {s.kind}</span>
+              </li>
+            ))}
           </ul>
-        </section>
-      )}
-
-      {/* PRD F11 R6: sources, confidence, and when this was last looked at. */}
-      <footer className="mt-10 rounded-2xl border border-[var(--color-line)] p-4">
-        <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">Sources</p>
-        <ul className="mt-2 space-y-1 text-sm text-[var(--color-muted)]">
-          {card.sources.map((s) => (
-            <li key={s.title}>
-              {s.title}
-              {s.author && <span> — {s.author}</span>}
-              {s.year && <span> ({s.year})</span>}
-              <span className="text-[var(--color-faint)]"> · {s.kind}</span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 text-sm">
-          <span className="text-[var(--color-faint)]">Confidence: </span>
-          <span
-            className={
-              card.confidence === 'established'
-                ? 'text-[var(--color-ink)]'
-                : 'text-[var(--color-warn)]'
-            }
-          >
-            {CONFIDENCE_LABELS[card.confidence]}
-          </span>
-          <span className="text-[var(--color-faint)]"> · reviewed {card.lastReviewed}</span>
-        </p>
-      </footer>
+          <p className="mt-3 text-sm">
+            <span className="text-[var(--color-faint)]">Confidence: </span>
+            <span
+              className={
+                card.confidence === 'established'
+                  ? 'text-[var(--color-ink)]'
+                  : 'text-[var(--color-warn)]'
+              }
+            >
+              {CONFIDENCE_LABELS[card.confidence]}
+            </span>
+            <span className="text-[var(--color-faint)]"> · reviewed {card.lastReviewed}</span>
+          </p>
+        </footer>
+      </PageBody>
     </main>
   )
 }
@@ -177,7 +182,7 @@ function Prose({ text }: { text: string }) {
           return (
             <pre
               key={key}
-              className="overflow-x-auto rounded-xl bg-[var(--color-raised)] p-4 text-sm"
+              className="overflow-x-auto rounded-lg bg-[var(--color-raised)] p-4 text-sm"
             >
               <code>{block.replace(/^ {4}/gm, '')}</code>
             </pre>

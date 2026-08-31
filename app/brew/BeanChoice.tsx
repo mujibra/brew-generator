@@ -46,10 +46,7 @@ export function BeanChoice({
 }) {
   if (beans.length === 0) {
     return (
-      <Link
-        href="/shelf/"
-        className="tap block rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3"
-      >
+      <Link href="/shelf/" className="tap block rounded-lg bg-[var(--color-surface)] px-4 py-3">
         <span className="block text-sm font-medium">Add a bag to your shelf</span>
         <span className="mt-1 block text-sm text-[var(--color-muted)]">
           Then the app tracks what is left, how fresh it is, and how your brews from it score.
@@ -111,7 +108,7 @@ function BeanProfile({
   const botany = [bean.variety, bean.process].filter(Boolean).join(' · ')
 
   return (
-    <div className="mt-3 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+    <div className="mt-3 rounded-lg bg-[var(--color-surface)] p-4">
       {(provenance || botany || bean.roastLevel) && (
         <p className="text-sm text-[var(--color-muted)]">
           {[
@@ -131,7 +128,7 @@ function BeanProfile({
 
       {/* Freshness is the part you can still act on before pouring. */}
       {fresh && (
-        <div className="mt-3 border-t border-[var(--color-line)] pt-3">
+        <div className="mt-3 border-t-2 border-[var(--color-line)] pt-3">
           <p className="text-sm">
             <span
               className={
@@ -154,7 +151,7 @@ function BeanProfile({
       )}
 
       {/* What this brew costs the bag. PRD F5 R4. */}
-      <div className="mt-3 border-t border-[var(--color-line)] pt-3">
+      <div className="mt-3 border-t-2 border-[var(--color-line)] pt-3">
         {short ? (
           <p className="text-sm text-[var(--color-warn)]">
             Only {bean.remainingG} g left and this recipe wants {doseG} g. You can still brew — the

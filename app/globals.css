@@ -1,7 +1,9 @@
 @import "tailwindcss";
 
 /*
- * Palette. Four given colours, plus the steps derived between them:
+ * Flat design in the coffee palette.
+ *
+ * The four given colours:
  *
  *   #2E2910  dark roasted brown — surfaces
  *   #2C5745  deep green        — positive states
@@ -9,6 +11,12 @@
  *   #EB7D00  orange            — accent, the one interactive colour
  *
  * Dark by default: dawn brewing is the common case (PRD 13.1).
+ *
+ * The rules, and they are absolute:
+ *   - no box shadows, no bevels, no blur, no colourful gradients
+ *   - blocks of solid colour define grouping, not lines
+ *   - hierarchy comes from scale, weight and colour, never from depth
+ *   - one radius family: 6px and 8px, never a soft 16px blob
  */
 @theme {
   /* Neutrals, walked down and up from #2E2910 so everything shares its warmth. */
@@ -25,21 +33,26 @@
 
   /* Orange is the only interactive colour, so it always means "you can act". */
   --color-accent: #eb7d00;
+  --color-accent-strong: #ff9526;
   --color-accent-soft: #6b3a06;
   --color-on-accent: #1b1809;
 
   /* Green means the coffee is where you want it. */
   --color-good: #2c5745;
+  --color-good-strong: #3a7059;
   --color-good-ink: #7cc0a1;
 
   /* Attention. Warm enough to belong, distinct enough from the accent. */
   --color-warn: #e0b33a;
+  --color-warn-block: #52410c;
 
   /*
    * Destructive only. Deliberately outside the four-colour palette: deleting
    * must never look like the orange call to action.
    */
   --color-danger: #e5744e;
+
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 html {
@@ -50,9 +63,21 @@ html {
 body {
   background: var(--color-bg);
   color: var(--color-ink);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   /* Wet hands, one-handed use: never let a mis-tap select text. */
   -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Headings are the interface. Geometric, heavy, tight — the weight carries the
+ * hierarchy that a shadow would carry in a layered design.
+ */
+h1,
+h2,
+h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
 }
 
 /* PRD 13.1: every interactive target is at least 48px. */
@@ -75,18 +100,25 @@ input {
   min-height: 40px;
 }
 
-/* Visible keyboard focus everywhere, never a removed outline. */
+/*
+ * Focus has to be a hard, high-contrast shape. With no shadows in the system
+ * there is no glow to fall back on, so the ring is solid and offset.
+ */
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 3px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 0.5rem;
 }
 
-/* Pressed feedback: real, immediate, and cheap. */
+/*
+ * Interaction is a colour shift and a scale change. Snappy, 200ms, and never a
+ * lift — nothing in this interface floats.
+ */
 button:active:not(:disabled),
 [role="radio"]:active,
-[role="combobox"]:active {
-  transform: translateY(1px);
+[role="combobox"]:active,
+a.tap:active {
+  transform: scale(0.98);
 }
 
 /* Number inputs: no spinners, they are useless on touch and misfire on desktop. */
@@ -108,7 +140,7 @@ input[type="range"] {
 }
 input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
-  border-radius: 999px;
+  border-radius: 2px;
   background: var(--color-line);
 }
 input[type="range"]::-webkit-slider-thumb {
@@ -116,20 +148,20 @@ input[type="range"]::-webkit-slider-thumb {
   margin-top: -9px;
   height: 24px;
   width: 24px;
-  border-radius: 999px;
+  border-radius: 6px;
   background: var(--color-accent);
   border: 3px solid var(--color-bg);
 }
 input[type="range"]::-moz-range-track {
   height: 6px;
-  border-radius: 999px;
+  border-radius: 2px;
   background: var(--color-line);
 }
 input[type="range"]::-moz-range-thumb {
   height: 24px;
   width: 24px;
   border: 3px solid var(--color-bg);
-  border-radius: 999px;
+  border-radius: 6px;
   background: var(--color-accent);
 }
 
@@ -142,7 +174,10 @@ input[type="range"]::-moz-range-thumb {
   }
   button:active:not(:disabled),
   [role="radio"]:active,
-  [role="combobox"]:active {
-    transform: none;
+  [role="combobox"]:active,
+  a.tap:active,
+  .hover-scale:hover,
+  .hover-lift:hover {
+    transform: none !important;
   }
 }

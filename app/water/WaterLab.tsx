@@ -1,5 +1,7 @@
 'use client'
 
+import { PageBody, PageHeader } from '@/app/components/ui'
+
 import {
   SALT_CONTRIBUTION,
   SCA_ACCEPTABLE,
@@ -10,7 +12,6 @@ import {
   dosesForTarget,
   profileWarnings,
 } from '@/lib/calc/water'
-import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
 /**
@@ -73,70 +74,65 @@ export function WaterLab() {
   const [mode, setMode] = useState<Mode>('build')
 
   return (
-    <main className="mx-auto max-w-2xl px-5 py-8">
-      <Link href="/" className="text-sm text-[var(--color-muted)]">
-        ← Extraction
-      </Link>
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight">Water</h1>
-      <p className="mt-2 text-[var(--color-muted)]">
-        Your cup is about 98.5 % water. It is the biggest variable most people never touch.
-      </p>
-
-      <div
-        role="tablist"
-        aria-label="Water tools"
-        className="mt-6 flex gap-2 rounded-full border border-[var(--color-line)] p-1"
-      >
-        {(
-          [
-            ['build', 'Build'],
-            ['blend', 'Blend'],
-            ['diagnose', 'My tap'],
-          ] as [Mode, string][]
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={mode === id}
-            onClick={() => setMode(id)}
-            className={`compact flex-1 rounded-full text-sm ${
-              mode === id
-                ? 'bg-[var(--color-accent)] font-semibold text-[var(--color-on-accent)]'
-                : 'text-[var(--color-muted)]'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {mode === 'build' && <Build />}
-      {mode === 'blend' && <Blend />}
-      {mode === 'diagnose' && <Diagnose />}
-
-      <section className="mt-12">
-        <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--color-muted)]">
-          What each mineral actually does
-        </h2>
-        <ul className="mt-3 space-y-2">
-          {ION_ROLES.map((r) => (
-            <li
-              key={r.ion}
-              className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4"
+    <main>
+      <PageHeader
+        title="Water"
+        lead={'Your cup is about 98.5 % water. It is the biggest variable most people never touch.'}
+      />
+      <PageBody>
+        <div
+          role="tablist"
+          aria-label="Water tools"
+          className="flex gap-2 rounded-full bg-[var(--color-surface)] p-1"
+        >
+          {(
+            [
+              ['build', 'Build'],
+              ['blend', 'Blend'],
+              ['diagnose', 'My tap'],
+            ] as [Mode, string][]
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={mode === id}
+              onClick={() => setMode(id)}
+              className={`compact flex-1 rounded-full text-sm ${
+                mode === id
+                  ? 'bg-[var(--color-accent)] font-semibold text-[var(--color-on-accent)]'
+                  : 'text-[var(--color-muted)]'
+              }`}
             >
-              <p className="font-medium">{r.ion}</p>
-              <p className="mt-1 text-sm text-[var(--color-muted)]">{r.role}</p>
-              <p className="mt-2 text-sm">
-                <span className="text-[var(--color-faint)]">Too little: </span>
-                {r.tooLittle}
-                <span className="text-[var(--color-faint)]"> · Too much: </span>
-                {r.tooMuch}
-              </p>
-            </li>
+              {label}
+            </button>
           ))}
-        </ul>
-      </section>
+        </div>
+
+        {mode === 'build' && <Build />}
+        {mode === 'blend' && <Blend />}
+        {mode === 'diagnose' && <Diagnose />}
+
+        <section className="mt-12">
+          <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--color-muted)]">
+            What each mineral actually does
+          </h2>
+          <ul className="mt-3 space-y-2">
+            {ION_ROLES.map((r) => (
+              <li key={r.ion} className="rounded-lg bg-[var(--color-surface)] p-4">
+                <p className="font-medium">{r.ion}</p>
+                <p className="mt-1 text-sm text-[var(--color-muted)]">{r.role}</p>
+                <p className="mt-2 text-sm">
+                  <span className="text-[var(--color-faint)]">Too little: </span>
+                  {r.tooLittle}
+                  <span className="text-[var(--color-faint)]"> · Too much: </span>
+                  {r.tooMuch}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </PageBody>
     </main>
   )
 }
@@ -189,10 +185,10 @@ function Build() {
               setGh(String(p.gh))
               setKh(String(p.kh))
             }}
-            className={`compact rounded-full border px-4 text-sm ${
+            className={`compact rounded-full px-4 text-sm transition-all duration-200 ${
               Number(gh) === p.gh && Number(kh) === p.kh
-                ? 'border-[var(--color-accent)] bg-[var(--color-raised)]'
-                : 'border-[var(--color-line)] text-[var(--color-muted)]'
+                ? 'bg-[var(--color-accent)] font-semibold text-[var(--color-on-accent)]'
+                : 'bg-[var(--color-surface)] text-[var(--color-muted)] hover:bg-[var(--color-raised)] hover:text-[var(--color-ink)]'
             }`}
           >
             {p.name}
@@ -242,10 +238,10 @@ function Build() {
               key={id}
               type="button"
               onClick={() => setBicarbSalt(id)}
-              className={`compact flex-1 rounded-xl border px-3 text-sm ${
+              className={`compact flex-1 rounded-lg px-3 text-sm transition-all duration-200 ${
                 bicarbSalt === id
-                  ? 'border-[var(--color-accent)] bg-[var(--color-raised)]'
-                  : 'border-[var(--color-line)] text-[var(--color-muted)]'
+                  ? 'bg-[var(--color-accent)] font-semibold text-[var(--color-on-accent)]'
+                  : 'bg-[var(--color-surface)] text-[var(--color-muted)] hover:bg-[var(--color-raised)] hover:text-[var(--color-ink)]'
               }`}
             >
               {label}
@@ -262,7 +258,7 @@ function Build() {
           <h2 className="mt-8 text-xs font-medium uppercase tracking-widest text-[var(--color-muted)]">
             Concentrate
           </h2>
-          <div className="mt-3 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+          <div className="mt-3 rounded-lg bg-[var(--color-surface)] p-4">
             <label className="block">
               <span className="text-sm">
                 Strength ·{' '}
@@ -279,7 +275,7 @@ function Build() {
               />
             </label>
 
-            <div className="mt-3 border-t border-[var(--color-line)] pt-3">
+            <div className="mt-3 border-t-2 border-[var(--color-line)] pt-3">
               <Field label="Concentrate batch" unit="L" value={batchL} onChange={setBatchL} />
             </div>
 
@@ -302,7 +298,7 @@ function Build() {
                 ))}
             </ul>
 
-            <p className="mt-4 rounded-xl bg-[var(--color-raised)] p-3 text-sm">
+            <p className="mt-4 rounded-lg bg-[var(--color-raised)] p-3 text-sm">
               Then add{' '}
               <span className="font-semibold text-[var(--color-accent)]">
                 {concentrate?.mlPerLitreOfBrewWater.toFixed(0)} mL
@@ -322,7 +318,7 @@ function Build() {
             warnings={result.warnings}
           />
 
-          <details className="mt-4 rounded-2xl border border-[var(--color-line)] p-4">
+          <details className="mt-4 rounded-lg bg-[var(--color-surface)] p-4">
             <summary className="cursor-pointer text-sm text-[var(--color-muted)]">
               Safety and handling
             </summary>
@@ -387,12 +383,12 @@ function Blend() {
       </div>
 
       {result && 'error' in result ? (
-        <p className="mt-6 rounded-2xl border border-[var(--color-warn)] p-4 text-sm text-[var(--color-warn)]">
+        <p className="mt-6 rounded-lg bg-[var(--color-warn-block)] p-4 text-sm font-medium text-[var(--color-warn)]">
           {result.error}. Dilution can only lower hardness — to raise it, use the Build tab.
         </p>
       ) : (
         result && (
-          <div className="mt-6 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+          <div className="mt-6 rounded-lg bg-[var(--color-surface)] p-4">
             <p className="text-sm uppercase tracking-widest text-[var(--color-muted)]">Mix</p>
             <p className="mt-2 text-2xl font-semibold tabular-nums">{result.sourceMl} mL source</p>
             <p className="text-2xl font-semibold tabular-nums text-[var(--color-accent)]">
@@ -453,7 +449,7 @@ function Diagnose() {
             />
           </div>
           {warnings.length > 0 && (
-            <div className="mt-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+            <div className="mt-4 rounded-lg bg-[var(--color-surface)] p-4">
               <p className="text-sm font-medium">What to do about it</p>
               <p className="mt-2 text-sm text-[var(--color-muted)]">
                 {profile.khPpmCaCO3 > 70
@@ -490,7 +486,7 @@ function ProfileReadout({
   const inRange = (v: number, r: { min: number; max: number }) => v >= r.min && v <= r.max
 
   return (
-    <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+    <div className="rounded-lg bg-[var(--color-surface)] p-4">
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Readout
           label="Hardness"
@@ -579,7 +575,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="mt-1 w-full rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-3 tabular-nums"
+        className="mt-1 w-full rounded-lg bg-[var(--color-surface)] px-3 tabular-nums"
       />
     </label>
   )

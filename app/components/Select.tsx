@@ -144,9 +144,13 @@ export function Select({
         aria-activedescendant={open ? `${listId}-${active}` : undefined}
         onClick={() => (open ? setOpen(false) : openList())}
         onKeyDown={onKeyDown}
-        className={`flex w-full items-center justify-between gap-3 rounded-2xl border bg-[var(--color-surface)] px-4 text-left ${
+        className={`flex w-full items-center justify-between gap-3 rounded-lg border-2 px-4 text-left transition-colors duration-200 ${
           compact ? 'compact text-sm' : 'text-base'
-        } ${open ? 'border-[var(--color-accent)]' : 'border-[var(--color-line)]'}`}
+        } ${
+          open
+            ? 'border-[var(--color-accent)] bg-[var(--color-bg)]'
+            : 'border-transparent bg-[var(--color-raised)] hover:bg-[var(--color-line)]'
+        }`}
       >
         <span className="min-w-0 flex-1 truncate">
           {selected ? (
@@ -172,7 +176,7 @@ export function Select({
           role="listbox"
           aria-label={label}
           tabIndex={-1}
-          className="absolute z-40 mt-1 max-h-72 w-full overflow-y-auto overscroll-contain rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-raised)] p-1 shadow-2xl"
+          className="absolute z-40 mt-1 max-h-72 w-full overflow-y-auto overscroll-contain rounded-lg border-2 border-[var(--color-line-strong)] bg-[var(--color-raised)] p-1"
         >
           {options.map((option, i) => {
             const isSelected = option.value === value
@@ -186,7 +190,7 @@ export function Select({
                 aria-selected={isSelected}
                 onClick={() => commit(i)}
                 onMouseEnter={() => setActive(i)}
-                className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 ${
+                className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 ${
                   compact ? 'compact' : ''
                 } ${isActive ? 'bg-[var(--color-accent-soft)]' : ''}`}
               >

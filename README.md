@@ -46,6 +46,43 @@ never matches and the page dies on hydration offline.
 Caching strategy: `/_next/static/` cache-first (immutable, hashed), navigations
 network-first falling back to cache, everything else stale-while-revalidate.
 
+## The design system
+
+Flat design in the user's own four colours. The rules are absolute and they are
+enforced by `app/components/ui.tsx`, which exists because the same card was
+hand-written 32 times and the same uppercase eyebrow 52 times before it did.
+
+1. **No shadows, no blur, no gradients on elements.** The Z-axis does not exist.
+   Grouping is a block of solid colour; a lifted plane is not available.
+2. **Hierarchy is scale, weight and colour.** Outfit at 800 with -0.02em tracking
+   does the work a shadow would do in a layered design.
+3. **One radius family, 6px and 8px.** The 16px blobs are gone.
+4. **Borders are the exception, and thick when used.** A hairline reads as dirt
+   on a dark ground. Inputs and popovers get `border-2`, outline buttons
+   `border-4`, structural rules `border-t-2`. The one 1px rule left is between
+   table rows, where 2px would read as a cage.
+5. **Interaction is a colour shift plus a scale, 200ms.** `hover:scale-[1.02]`
+   on blocks, `hover:scale-[1.03]` on buttons, `active:scale-98`. Never a lift.
+6. **Selection is a filled block**, not an outline you have to hunt for. Chips,
+   option cards and toggles flood with the accent; list rows carrying dense data
+   take a 4px left bar instead, so their contents stay legible.
+7. **Orange is the only interactive colour.** Green means the coffee is where you
+   want it, amber warns, and the danger red sits outside the palette on purpose
+   so deleting can never look like the call to action.
+
+`PageHeader` opens every surface with a full-bleed block of colour. Full bleed is
+the point: a contained header is a card, and a card reads as one item among
+many. Large geometric shapes at low opacity sit behind it — poster furniture,
+`aria-hidden`, and the reason a flat page does not read as an empty one.
+
+Outfit is self-hosted by `next/font` at build time. A runtime request to
+`fonts.googleapis.com` would fail on a phone in a kitchen with no signal, which
+is precisely when this app is open.
+
+Contrast is checked, not assumed: muted olive on the green and orange blocks
+lands around 3.4:1, so those blocks carry full-strength text and let size and
+weight do the ranking instead.
+
 ## Non-negotiable constraints
 
 These exist because the same web build gets wrapped in Capacitor at Phase 2

@@ -100,7 +100,7 @@ export function InstallPrompt() {
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 p-3">
-      <div className="mx-auto max-w-md rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-raised)] p-4 shadow-2xl">
+      <div className="mx-auto max-w-md rounded-lg border-2 border-[var(--color-line-strong)] bg-[var(--color-raised)] p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="font-medium">Install Extraction</p>
@@ -136,7 +136,7 @@ export function InstallPrompt() {
           <button
             type="button"
             onClick={install}
-            className="mt-3 w-full rounded-xl bg-[var(--color-accent)] py-3 font-semibold text-[var(--color-on-accent)]"
+            className="mt-3 w-full rounded-lg bg-[var(--color-accent)] py-3 font-semibold text-[var(--color-on-accent)]"
           >
             Install
           </button>

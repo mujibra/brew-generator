@@ -1,5 +1,7 @@
 'use client'
 
+import { PageBody, PageHeader } from '@/app/components/ui'
+
 import { compileRecipe } from '@/lib/brew/steps'
 import { formatElapsed } from '@/lib/brew/timer'
 import { repository } from '@/lib/db/dexie'
@@ -142,242 +144,250 @@ function DialIn() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-5 py-8">
-      <Link href="/" className="text-sm text-[var(--color-muted)]">
-        ← Extraction
-      </Link>
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight">Dial in</h1>
-      <p className="mt-2 text-[var(--color-muted)]">
-        One change at a time. Tell it what is wrong, brew again, then say whether it helped.
-      </p>
-
-      {subject && (
-        <section className="mt-6 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
-          <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">
-            {targeted ? 'Diagnosing this brew' : 'Based on your last brew'}
-          </p>
-          <p className="mt-1 font-medium">
-            {RECIPES.find((r) => r.id === subject.recipeId)?.name ??
-              (subject.recipeId === 'generated' ? 'Built recipe' : 'Ad-hoc brew')}
-          </p>
-          <p className="mt-1 text-sm text-[var(--color-faint)] tabular-nums">
-            {new Date(subject.startedAt).toLocaleDateString(undefined, {
-              day: 'numeric',
-              month: 'short',
-            })}
-            {` · ${subject.doseG}:${subject.waterG}`}
-            {` · ${formatElapsed(subject.totalTimeS * 1000)}`}
-            {subject.grindSetting && ` · grind ${subject.grindSetting}`}
-            {subject.score !== undefined && ` · scored ${subject.score}`}
-          </p>
-          {(inferredSymptom || inferredDrawdown) && (
-            <p className="mt-2 text-sm text-[var(--color-muted)]">
-              Filled in from the log
-              {inferredSymptom && ` — tagged ${inferredSymptom}`}
-              {inferredDrawdown && `, drawdown ${inferredDrawdown}`}. Change anything below if it
-              was not quite that.
+    <main>
+      <PageHeader
+        title="Dial in"
+        lead={
+          'One change at a time. Tell it what is wrong, brew again, then say whether it helped.'
+        }
+      />
+      <PageBody>
+        {subject && (
+          <section className="rounded-lg bg-[var(--color-surface)] p-4">
+            <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">
+              {targeted ? 'Diagnosing this brew' : 'Based on your last brew'}
             </p>
-          )}
-          {!targeted && (
-            <Link href="/journal/" className="tap mt-2 inline-block text-sm underline">
-              Pick a different brew from the journal
-            </Link>
-          )}
-        </section>
-      )}
-
-      <fieldset className="mt-8">
-        <legend className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--color-muted)]">
-          What is wrong?
-        </legend>
-        <div className="grid gap-2">
-          {SYMPTOMS.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setSymptom(s.id)}
-              className={`rounded-xl border px-4 py-3 text-left ${
-                symptom === s.id
-                  ? 'border-[var(--color-accent)] bg-[var(--color-surface)]'
-                  : 'border-[var(--color-line)]'
-              }`}
-            >
-              <span className="block font-medium">{s.label}</span>
-              <span className="block text-sm text-[var(--color-muted)]">{s.hint}</span>
-            </button>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className="mt-8">
-        <legend className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--color-muted)]">
-          How was the drawdown?
-        </legend>
-        <div className="flex flex-wrap gap-2">
-          {DRAWDOWNS.map((d) => (
-            <button
-              key={d.id}
-              type="button"
-              onClick={() => setDrawdown(d.id)}
-              className={`rounded-full border px-4 py-2 text-sm ${
-                drawdown === d.id
-                  ? 'border-[var(--color-accent)] bg-[var(--color-surface)]'
-                  : 'border-[var(--color-line)]'
-              }`}
-            >
-              {d.label}
-            </button>
-          ))}
-        </div>
-        <p className="mt-3 text-sm text-[var(--color-muted)]">
-          This is the question that separates a coarse grind from a channelling bed. Both taste
-          sour. The fixes are opposites.
-        </p>
-      </fieldset>
-
-      <section className="mt-8">
-        <h2 className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--color-muted)]">
-          Your grinder
-        </h2>
-        <Link
-          href="/gear/"
-          className="tap flex items-baseline justify-between gap-3 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3"
-        >
-          <span className="min-w-0">
-            <span className="block truncate font-medium">{grinder ? grinder.name : 'Not set'}</span>
-            <span className="block text-sm text-[var(--color-faint)]">
-              {grinder
-                ? "Advice comes back in this grinder's own clicks"
-                : 'Set it and advice arrives in clicks instead of a vague direction'}
-            </span>
-          </span>
-          <span className="shrink-0 text-sm text-[var(--color-muted)]">Gear →</span>
-        </Link>
-      </section>
-
-      <section className="mt-10 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-5">
-        {result.ok ? (
-          <>
-            <p className="text-sm uppercase tracking-widest text-[var(--color-muted)]">
-              Do this next
+            <p className="mt-1 font-medium">
+              {RECIPES.find((r) => r.id === subject.recipeId)?.name ??
+                (subject.recipeId === 'generated' ? 'Built recipe' : 'Ad-hoc brew')}
             </p>
-            <p className="mt-2 text-xl font-medium">{result.value.action}</p>
-            {(() => {
-              const to = applyGrindMove(fromGrind, result.value.grindUnits)
-              if (!to || !result.value.grindUnits) return null
-              return (
-                <p className="mt-2 text-lg tabular-nums">
-                  <span className="text-[var(--color-muted)]">{fromGrind}</span>
-                  <span className="text-[var(--color-faint)]"> → </span>
-                  <span className="font-semibold text-[var(--color-accent)]">{to}</span>
-                  <span className="text-[var(--color-faint)]">
-                    {' '}
-                    {result.value.grindUnits.unitLabel}
-                  </span>
-                </p>
-              )
-            })()}
-            <p className="mt-4 text-sm text-[var(--color-muted)]">
-              <span className="text-[var(--color-ink)]">Expect: </span>
-              {result.value.prediction}
+            <p className="mt-1 text-sm text-[var(--color-faint)] tabular-nums">
+              {new Date(subject.startedAt).toLocaleDateString(undefined, {
+                day: 'numeric',
+                month: 'short',
+              })}
+              {` · ${subject.doseG}:${subject.waterG}`}
+              {` · ${formatElapsed(subject.totalTimeS * 1000)}`}
+              {subject.grindSetting && ` · grind ${subject.grindSetting}`}
+              {subject.score !== undefined && ` · scored ${subject.score}`}
             </p>
-            <p className="mt-2 text-sm text-[var(--color-muted)]">
-              Because: {result.value.reasoning[0]}
-            </p>
-            <p className="mt-4 text-sm">
-              <span className="text-[var(--color-muted)]">Confidence: </span>
-              {result.value.confidence} · {result.value.hypothesis.label}
-            </p>
-
-            {/* PRD F4 R6: never a recommendation without its mechanism. */}
-            {(() => {
-              const card = cardById(result.value.mechanismCardId)
-              if (!card) return null
-              return (
-                <Link
-                  href={`/learn/${card.id}/`}
-                  className="tap mt-4 flex items-baseline justify-between gap-3 rounded-xl border border-[var(--color-line)] px-4 py-3"
-                >
-                  <span className="min-w-0">
-                    <span className="block text-xs uppercase tracking-widest text-[var(--color-muted)]">
-                      Why this works
-                    </span>
-                    <span className="mt-1 block truncate font-medium">{card.name}</span>
-                  </span>
-                  <span className="shrink-0 text-sm text-[var(--color-muted)]">Read →</span>
-                </Link>
-              )
-            })()}
-
-            {gear?.pendingHypothesis?.id === result.value.hypothesis.id || committed ? (
-              <div className="mt-5 rounded-xl bg-[var(--color-raised)] p-4">
-                <p className="text-sm font-medium text-[var(--color-accent)]">
-                  Testing this on your next brew
-                </p>
-                <p className="mt-1 text-sm text-[var(--color-muted)]">
-                  When you log it, the app will ask whether it helped and remember the answer. Three
-                  no-change results in a row and it moves on to a different explanation.
-                </p>
-                {gear?.pendingHypothesis?.targetGrind && (
-                  <p className="mt-2 text-sm">
-                    <span className="text-[var(--color-muted)]">Set your grinder to </span>
-                    <span className="font-semibold tabular-nums text-[var(--color-accent)]">
-                      {gear.pendingHypothesis.targetGrind}
-                    </span>
-                    <span className="text-[var(--color-muted)]"> before you start.</span>
-                  </p>
-                )}
-                <Link
-                  href={brewHref(subject?.recipeId)}
-                  className="tap mt-3 inline-block rounded-xl bg-[var(--color-accent)] px-5 text-sm font-semibold leading-10 text-[var(--color-on-accent)]"
-                >
-                  Brew it
-                </Link>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={commit}
-                className="mt-5 w-full rounded-2xl bg-[var(--color-accent)] py-4 font-semibold text-[var(--color-on-accent)]"
-              >
-                I'll try this
-              </button>
-            )}
-
-            {history.length > 0 && (
-              <p className="mt-4 text-sm text-[var(--color-muted)]">
-                {history.length} previous attempt{history.length === 1 ? '' : 's'} on record, taken
-                from your journal.
+            {(inferredSymptom || inferredDrawdown) && (
+              <p className="mt-2 text-sm text-[var(--color-muted)]">
+                Filled in from the log
+                {inferredSymptom && ` — tagged ${inferredSymptom}`}
+                {inferredDrawdown && `, drawdown ${inferredDrawdown}`}. Change anything below if it
+                was not quite that.
               </p>
             )}
-
-            <button
-              type="button"
-              onClick={() => setExpert((v) => !v)}
-              className="mt-5 text-sm underline text-[var(--color-muted)]"
-            >
-              {expert ? 'Hide' : 'Show'} the full ranking
-            </button>
-
-            {expert && (
-              <ul className="mt-3 space-y-2 text-sm">
-                {result.value.ranking.map((r) => (
-                  <li key={r.hypothesis.id} className="flex gap-3">
-                    <span className="w-8 tabular-nums text-[var(--color-muted)]">{r.score}</span>
-                    <span className={r.excluded ? 'line-through opacity-60' : ''}>
-                      {r.hypothesis.label}
-                      {r.excluded === 'exhausted' && ' — tried, no change'}
-                      {r.excluded === 'madeItWorse' && ' — made it worse'}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+            {!targeted && (
+              <Link href="/journal/" className="tap mt-2 inline-block text-sm underline">
+                Pick a different brew from the journal
+              </Link>
             )}
-          </>
-        ) : (
-          <p className="text-[var(--color-warn)]">{result.error}</p>
+          </section>
         )}
-      </section>
+
+        <fieldset className="mt-8">
+          <legend className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--color-muted)]">
+            What is wrong?
+          </legend>
+          <div className="grid gap-2">
+            {SYMPTOMS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setSymptom(s.id)}
+                className={`rounded-lg px-4 py-3 text-left transition-all duration-200 ${
+                  symptom === s.id
+                    ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+                    : 'bg-[var(--color-surface)] hover:scale-[1.02] hover:bg-[var(--color-raised)]'
+                }`}
+              >
+                <span className="block font-bold tracking-tight">{s.label}</span>
+                <span
+                  className={`block text-sm ${
+                    symptom === s.id ? 'text-[var(--color-on-accent)]' : 'text-[var(--color-muted)]'
+                  }`}
+                >
+                  {s.hint}
+                </span>
+              </button>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="mt-8">
+          <legend className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--color-muted)]">
+            How was the drawdown?
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {DRAWDOWNS.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => setDrawdown(d.id)}
+                className={`rounded-full px-4 py-2 text-sm transition-all duration-200 ${
+                  drawdown === d.id
+                    ? 'bg-[var(--color-accent)] font-semibold text-[var(--color-on-accent)]'
+                    : 'bg-[var(--color-surface)] text-[var(--color-muted)] hover:bg-[var(--color-raised)] hover:text-[var(--color-ink)]'
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 text-sm text-[var(--color-muted)]">
+            This is the question that separates a coarse grind from a channelling bed. Both taste
+            sour. The fixes are opposites.
+          </p>
+        </fieldset>
+
+        <section className="mt-8">
+          <h2 className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--color-muted)]">
+            Your grinder
+          </h2>
+          <Link
+            href="/gear/"
+            className="tap flex items-baseline justify-between gap-3 rounded-lg bg-[var(--color-surface)] px-4 py-3"
+          >
+            <span className="min-w-0">
+              <span className="block truncate font-medium">
+                {grinder ? grinder.name : 'Not set'}
+              </span>
+              <span className="block text-sm text-[var(--color-faint)]">
+                {grinder
+                  ? "Advice comes back in this grinder's own clicks"
+                  : 'Set it and advice arrives in clicks instead of a vague direction'}
+              </span>
+            </span>
+            <span className="shrink-0 text-sm text-[var(--color-muted)]">Gear →</span>
+          </Link>
+        </section>
+
+        <section className="mt-10 rounded-lg bg-[var(--color-surface)] p-5">
+          {result.ok ? (
+            <>
+              <p className="text-sm uppercase tracking-widest text-[var(--color-muted)]">
+                Do this next
+              </p>
+              <p className="mt-2 text-xl font-medium">{result.value.action}</p>
+              {(() => {
+                const to = applyGrindMove(fromGrind, result.value.grindUnits)
+                if (!to || !result.value.grindUnits) return null
+                return (
+                  <p className="mt-2 text-lg tabular-nums">
+                    <span className="text-[var(--color-muted)]">{fromGrind}</span>
+                    <span className="text-[var(--color-faint)]"> → </span>
+                    <span className="font-semibold text-[var(--color-accent)]">{to}</span>
+                    <span className="text-[var(--color-faint)]">
+                      {' '}
+                      {result.value.grindUnits.unitLabel}
+                    </span>
+                  </p>
+                )
+              })()}
+              <p className="mt-4 text-sm text-[var(--color-muted)]">
+                <span className="text-[var(--color-ink)]">Expect: </span>
+                {result.value.prediction}
+              </p>
+              <p className="mt-2 text-sm text-[var(--color-muted)]">
+                Because: {result.value.reasoning[0]}
+              </p>
+              <p className="mt-4 text-sm">
+                <span className="text-[var(--color-muted)]">Confidence: </span>
+                {result.value.confidence} · {result.value.hypothesis.label}
+              </p>
+
+              {/* PRD F4 R6: never a recommendation without its mechanism. */}
+              {(() => {
+                const card = cardById(result.value.mechanismCardId)
+                if (!card) return null
+                return (
+                  <Link
+                    href={`/learn/${card.id}/`}
+                    className="tap mt-4 flex items-baseline justify-between gap-3 rounded-lg px-4 py-3 bg-[var(--color-surface)] transition-all duration-200 hover:scale-[1.02] hover:bg-[var(--color-raised)]"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-xs uppercase tracking-widest text-[var(--color-muted)]">
+                        Why this works
+                      </span>
+                      <span className="mt-1 block truncate font-medium">{card.name}</span>
+                    </span>
+                    <span className="shrink-0 text-sm text-[var(--color-muted)]">Read →</span>
+                  </Link>
+                )
+              })()}
+
+              {gear?.pendingHypothesis?.id === result.value.hypothesis.id || committed ? (
+                <div className="mt-5 rounded-lg bg-[var(--color-raised)] p-4">
+                  <p className="text-sm font-medium text-[var(--color-accent)]">
+                    Testing this on your next brew
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--color-muted)]">
+                    When you log it, the app will ask whether it helped and remember the answer.
+                    Three no-change results in a row and it moves on to a different explanation.
+                  </p>
+                  {gear?.pendingHypothesis?.targetGrind && (
+                    <p className="mt-2 text-sm">
+                      <span className="text-[var(--color-muted)]">Set your grinder to </span>
+                      <span className="font-semibold tabular-nums text-[var(--color-accent)]">
+                        {gear.pendingHypothesis.targetGrind}
+                      </span>
+                      <span className="text-[var(--color-muted)]"> before you start.</span>
+                    </p>
+                  )}
+                  <Link
+                    href={brewHref(subject?.recipeId)}
+                    className="tap mt-3 inline-block rounded-lg bg-[var(--color-accent)] px-5 text-sm font-semibold leading-10 text-[var(--color-on-accent)]"
+                  >
+                    Brew it
+                  </Link>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={commit}
+                  className="mt-5 w-full rounded-lg bg-[var(--color-accent)] py-4 font-semibold text-[var(--color-on-accent)]"
+                >
+                  I'll try this
+                </button>
+              )}
+
+              {history.length > 0 && (
+                <p className="mt-4 text-sm text-[var(--color-muted)]">
+                  {history.length} previous attempt{history.length === 1 ? '' : 's'} on record,
+                  taken from your journal.
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setExpert((v) => !v)}
+                className="mt-5 text-sm underline text-[var(--color-muted)]"
+              >
+                {expert ? 'Hide' : 'Show'} the full ranking
+              </button>
+
+              {expert && (
+                <ul className="mt-3 space-y-2 text-sm">
+                  {result.value.ranking.map((r) => (
+                    <li key={r.hypothesis.id} className="flex gap-3">
+                      <span className="w-8 tabular-nums text-[var(--color-muted)]">{r.score}</span>
+                      <span className={r.excluded ? 'line-through opacity-60' : ''}>
+                        {r.hypothesis.label}
+                        {r.excluded === 'exhausted' && ' — tried, no change'}
+                        {r.excluded === 'madeItWorse' && ' — made it worse'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          ) : (
+            <p className="text-[var(--color-warn)]">{result.error}</p>
+          )}
+        </section>
+      </PageBody>
     </main>
   )
 }

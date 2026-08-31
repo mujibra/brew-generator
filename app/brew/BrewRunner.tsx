@@ -119,7 +119,7 @@ export function BrewRunner({ recipe }: { recipe: BuiltinRecipe }) {
         <button
           type="button"
           onClick={() => setSession((s) => advancePrep(s, compiled.prep.length))}
-          className="w-full rounded-2xl bg-[var(--color-accent)] py-5 text-xl font-semibold text-[var(--color-on-accent)]"
+          className="w-full rounded-lg bg-[var(--color-accent)] py-5 text-xl font-semibold text-[var(--color-on-accent)]"
         >
           Next
         </button>
@@ -152,10 +152,10 @@ export function BrewRunner({ recipe }: { recipe: BuiltinRecipe }) {
             const source = pending?.targetGrind ? 'pending' : last ? 'last' : 'recipe'
             return (
               <div
-                className={`mt-6 rounded-2xl border p-4 ${
+                className={`mt-6 rounded-lg p-4 ${
                   pending?.targetGrind
-                    ? 'border-[var(--color-accent)] bg-[var(--color-surface)]'
-                    : 'border-[var(--color-line)] bg-[var(--color-surface)]'
+                    ? 'bg-[var(--color-accent-soft)]'
+                    : 'bg-[var(--color-surface)]'
                 }`}
               >
                 <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">
@@ -201,7 +201,7 @@ export function BrewRunner({ recipe }: { recipe: BuiltinRecipe }) {
         <button
           type="button"
           onClick={() => update(beginBrew)}
-          className="w-full rounded-2xl bg-[var(--color-accent)] py-6 text-2xl font-semibold text-[var(--color-on-accent)]"
+          className="w-full rounded-lg bg-[var(--color-accent)] py-6 text-2xl font-semibold text-[var(--color-on-accent)]"
         >
           Start brewing
         </button>
@@ -279,7 +279,7 @@ export function BrewRunner({ recipe }: { recipe: BuiltinRecipe }) {
             value={actualG}
             onChange={(e) => setActualG(e.target.value)}
             placeholder="optional"
-            className="w-28 rounded-xl border border-[var(--color-line)] bg-transparent px-3 text-lg tabular-nums"
+            className="w-28 text-lg tabular-nums rounded-lg bg-[var(--color-raised)] px-3 outline-none transition-colors duration-200 focus:bg-[var(--color-bg)] focus:ring-2 focus:ring-[var(--color-accent)]"
           />
           {status !== 'notPouring' && (
             <span
@@ -303,21 +303,21 @@ export function BrewRunner({ recipe }: { recipe: BuiltinRecipe }) {
         <button
           type="button"
           onClick={() => update((s, now) => rewindStep(s, compiled, now))}
-          className="rounded-2xl border border-[var(--color-line)] py-4 text-base"
+          className="rounded-lg py-4 text-base bg-[var(--color-raised)] font-semibold transition-all duration-200 hover:bg-[var(--color-line)]"
         >
           Back
         </button>
         <button
           type="button"
           onClick={() => update(view.phase === 'paused' ? resumeBrew : pauseBrew)}
-          className="rounded-2xl border border-[var(--color-line)] py-4 text-base"
+          className="rounded-lg py-4 text-base bg-[var(--color-raised)] font-semibold transition-all duration-200 hover:bg-[var(--color-line)]"
         >
           {view.phase === 'paused' ? 'Resume' : 'Pause'}
         </button>
         <button
           type="button"
           onClick={() => update(finishBrew)}
-          className="rounded-2xl bg-[var(--color-accent)] py-4 text-base font-semibold text-[var(--color-on-accent)]"
+          className="rounded-lg bg-[var(--color-accent)] py-4 text-base font-semibold text-[var(--color-on-accent)]"
         >
           {view.isLastStep ? 'Finish' : 'Done'}
         </button>
@@ -351,14 +351,14 @@ function Restore({ onResume, onDiscard }: { onResume: () => void; onDiscard: () 
         <button
           type="button"
           onClick={onResume}
-          className="rounded-2xl bg-[var(--color-accent)] py-5 text-lg font-semibold text-[var(--color-on-accent)]"
+          className="rounded-lg bg-[var(--color-accent)] py-5 text-lg font-semibold text-[var(--color-on-accent)]"
         >
           Resume
         </button>
         <button
           type="button"
           onClick={onDiscard}
-          className="rounded-2xl border border-[var(--color-line)] py-5 text-lg"
+          className="rounded-lg py-5 text-lg bg-[var(--color-raised)] font-semibold transition-all duration-200 hover:bg-[var(--color-line)]"
         >
           Discard and start over
         </button>

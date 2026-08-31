@@ -57,14 +57,14 @@ export function ServiceWorker() {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center p-3">
       {offline ? (
-        <p className="rounded-full border border-[var(--color-line)] bg-[var(--color-raised)] px-4 py-2 text-sm text-[var(--color-muted)] shadow-lg">
+        <p className="rounded-full border-2 border-[var(--color-line-strong)] bg-[var(--color-raised)] px-4 py-2 text-sm font-medium text-[var(--color-ink)]">
           Offline — everything still works
         </p>
       ) : (
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="pointer-events-auto compact rounded-full bg-[var(--color-accent)] px-5 text-sm font-semibold text-[var(--color-on-accent)] shadow-lg"
+          className="pointer-events-auto compact rounded-full bg-[var(--color-accent)] px-5 text-sm font-semibold text-[var(--color-on-accent)]"
         >
           New version ready — reload
         </button>

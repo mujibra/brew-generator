@@ -1,5 +1,7 @@
 'use client'
 
+import { PageBody, PageHeader } from '@/app/components/ui'
+
 import { Select } from '@/app/components/Select'
 import { browserCapabilities } from '@/lib/capability/browser'
 import { repository } from '@/lib/db/dexie'
@@ -14,7 +16,6 @@ import {
 } from '@/lib/gear/store'
 import { GRINDERS, describeGrind, grindAdvice } from '@/lib/grinders/registry'
 import { BREWER_LIST } from '@/lib/recipes/brewers'
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 /**
@@ -82,7 +83,7 @@ export function GearView() {
         />
 
         {grinder && (
-          <div className="mt-3 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+          <div className="mt-3 rounded-lg bg-[var(--color-surface)] p-4">
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <Fact label="Burrs" value={grinder.burrType === 'flat' ? 'Flat' : 'Conical'} />
               <Fact label="Adjustment" value={grinder.unitLabel} />
@@ -123,10 +124,7 @@ export function GearView() {
                   ? grindAdvice(grinder, brewer.baseMicrons, current, brewer.baseMicrons)
                   : undefined
               return (
-                <li
-                  key={brewer.id}
-                  className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4"
-                >
+                <li key={brewer.id} className="rounded-lg bg-[var(--color-surface)] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <span className="min-w-0">
                       <span className="block truncate font-medium">{brewer.name}</span>
@@ -154,7 +152,7 @@ export function GearView() {
           </ul>
 
           {count === 0 && (
-            <p className="mt-3 rounded-xl bg-[var(--color-raised)] p-3 text-sm text-[var(--color-muted)]">
+            <p className="mt-3 rounded-lg bg-[var(--color-raised)] p-3 text-sm text-[var(--color-muted)]">
               Nothing set yet, so the app falls back to absolute micron estimates — usable, but
               treat them with suspicion. Fill in one brewer and the difference is immediate.
             </p>
@@ -166,7 +164,7 @@ export function GearView() {
         <h2 className="mb-3 text-xs font-medium uppercase tracking-widest text-[var(--color-muted)]">
           Scale
         </h2>
-        <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+        <div className="rounded-lg bg-[var(--color-surface)] p-4">
           {scale.available ? (
             <p className="text-sm">
               This browser supports Web Bluetooth. Scale protocol adapters are not built yet, so
@@ -192,12 +190,9 @@ export function GearView() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto max-w-2xl px-5 py-8">
-      <Link href="/" className="text-sm text-[var(--color-muted)]">
-        ← Extraction
-      </Link>
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight">Gear</h1>
-      {children}
+    <main>
+      <PageHeader title="Gear" />
+      <PageBody>{children}</PageBody>
     </main>
   )
 }
@@ -238,7 +233,7 @@ function BaselineInput({
         const n = Number(e.target.value)
         onCommit(e.target.value.trim() === '' || !Number.isFinite(n) || n < 0 ? undefined : n)
       }}
-      className="w-20 rounded-xl border border-[var(--color-line)] bg-transparent px-3 text-right tabular-nums"
+      className="w-20 text-right tabular-nums rounded-lg bg-[var(--color-raised)] px-3 outline-none transition-colors duration-200 focus:bg-[var(--color-bg)] focus:ring-2 focus:ring-[var(--color-accent)]"
     />
   )
 }

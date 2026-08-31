@@ -1,5 +1,7 @@
 'use client'
 
+import { PageBody, PageHeader } from '@/app/components/ui'
+
 import { Select } from '@/app/components/Select'
 import { formatElapsed } from '@/lib/brew/timer'
 import { repository } from '@/lib/db/dexie'
@@ -96,14 +98,14 @@ export function JournalView() {
   if (brews.length === 0) {
     return (
       <Shell>
-        <div className="mt-12 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-6 text-center">
+        <div className="mt-12 rounded-lg bg-[var(--color-surface)] p-6 text-center">
           <h2 className="text-xl font-semibold">Nothing logged yet</h2>
           <p className="mt-2 text-[var(--color-muted)]">
             Finish a brew and it lands here. Add a TDS reading and it lands on the chart too.
           </p>
           <Link
             href="/brew/"
-            className="tap mt-6 inline-block rounded-2xl bg-[var(--color-accent)] px-6 py-3 font-semibold text-[var(--color-on-accent)]"
+            className="tap mt-6 inline-block rounded-lg bg-[var(--color-accent)] px-6 py-3 font-semibold text-[var(--color-on-accent)]"
           >
             Brew something
           </Link>
@@ -122,16 +124,19 @@ export function JournalView() {
           label="Average score"
           value={stats.avgScore ? stats.avgScore.toFixed(1) : '—'}
           sub={`${stats.scored} scored`}
+          tone="good"
         />
         <Stat
           label="Streak"
           value={`${stats.currentStreakDays}d`}
           sub={`best ${stats.longestStreakDays}d`}
+          tone="warn"
         />
         <Stat
           label="Coffee used"
           value={`${(stats.totalCoffeeG / 1000).toFixed(2)} kg`}
           sub={`${(stats.totalWaterG / 1000).toFixed(1)} L water`}
+          tone="accent"
         />
       </div>
 
@@ -140,7 +145,7 @@ export function JournalView() {
         <h2 className="mb-3 text-xs font-medium uppercase tracking-widest text-[var(--color-muted)]">
           Brew control chart · {points.length} of {visible.length} measured
         </h2>
-        <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+        <div className="rounded-lg bg-[var(--color-surface)] p-4">
           {points.length === 0 ? (
             <p className="text-[var(--color-muted)]">
               No brews with a TDS reading yet. Enter one when you log a brew and it appears here,
@@ -166,7 +171,7 @@ export function JournalView() {
             {recipes.map((r) => (
               <li
                 key={r.recipeId}
-                className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3"
+                className="flex items-center justify-between gap-3 rounded-lg bg-[var(--color-surface)] px-4 py-3"
               >
                 <span className="min-w-0">
                   <span className="block truncate font-medium">{recipeName(r.recipeId)}</span>
@@ -200,7 +205,7 @@ export function JournalView() {
             {grinds.map((g) => (
               <li
                 key={g.setting}
-                className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3"
+                className="flex items-center justify-between gap-3 rounded-lg bg-[var(--color-surface)] px-4 py-3"
               >
                 <span className="min-w-0">
                   <span className="block font-medium tabular-nums">{g.setting}</span>
@@ -235,7 +240,7 @@ export function JournalView() {
           onChange={(e) => setFilters((f) => ({ ...f, text: e.target.value }))}
           placeholder="Search notes, tags, recipe"
           aria-label="Search brews"
-          className="w-full rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4"
+          className="w-full rounded-lg bg-[var(--color-surface)] px-4"
         />
 
         <div className="mt-2 flex flex-wrap gap-2">
@@ -285,10 +290,10 @@ export function JournalView() {
               type="button"
               onClick={() => setSelectedId(selectedId === b.id ? null : b.id)}
               aria-expanded={selectedId === b.id}
-              className={`w-full rounded-2xl border px-4 py-3 text-left ${
+              className={`w-full rounded-lg border-l-4 px-4 py-3 text-left transition-all duration-200 ${
                 selectedId === b.id
                   ? 'border-[var(--color-accent)] bg-[var(--color-raised)]'
-                  : 'border-[var(--color-line)] bg-[var(--color-surface)]'
+                  : 'border-transparent bg-[var(--color-surface)] hover:bg-[var(--color-raised)]'
               }`}
             >
               <span className="flex items-baseline justify-between gap-3">
@@ -345,7 +350,7 @@ export function JournalView() {
       </ul>
 
       {/* --- Export: PRD F3 R9, always available */}
-      <section className="mt-10 rounded-2xl border border-[var(--color-line)] p-4">
+      <section className="mt-10 rounded-lg bg-[var(--color-surface)] p-4">
         <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--color-muted)]">
           Your data
         </h2>
@@ -357,14 +362,14 @@ export function JournalView() {
           <button
             type="button"
             onClick={() => download('csv')}
-            className="compact flex-1 rounded-xl border border-[var(--color-line)] px-4 text-sm"
+            className="compact flex-1 rounded-lg px-4 text-sm bg-[var(--color-raised)] font-semibold transition-all duration-200 hover:bg-[var(--color-line)]"
           >
             Export CSV
           </button>
           <button
             type="button"
             onClick={() => download('json')}
-            className="compact flex-1 rounded-xl border border-[var(--color-line)] px-4 text-sm"
+            className="compact flex-1 rounded-lg px-4 text-sm bg-[var(--color-raised)] font-semibold transition-all duration-200 hover:bg-[var(--color-line)]"
           >
             Export JSON
           </button>
@@ -387,7 +392,7 @@ function Detail({
   const point = chartPoints([brew])[0]
 
   return (
-    <div className="mt-2 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+    <div className="mt-2 rounded-lg bg-[var(--color-surface)] p-4">
       <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
         <Fact label="Dose" value={`${brew.doseG} g`} />
         <Fact label="Water" value={`${brew.waterG} g`} />
@@ -404,7 +409,7 @@ function Detail({
       </dl>
 
       {point && (
-        <p className="mt-3 rounded-xl bg-[var(--color-raised)] px-3 py-2 text-sm">
+        <p className="mt-3 rounded-lg bg-[var(--color-raised)] px-3 py-2 text-sm">
           {describeZone(point.zone)}
         </p>
       )}
@@ -436,10 +441,10 @@ function Detail({
                   tags: on ? (brew.tags ?? []).filter((x) => x !== t) : [...(brew.tags ?? []), t],
                 })
               }
-              className={`compact rounded-full border px-3 text-sm ${
+              className={`compact rounded-full px-3 text-sm transition-all duration-200 ${
                 on
-                  ? 'border-[var(--color-accent)] bg-[var(--color-raised)]'
-                  : 'border-[var(--color-line)] text-[var(--color-muted)]'
+                  ? 'bg-[var(--color-accent)] font-semibold text-[var(--color-on-accent)]'
+                  : 'bg-[var(--color-surface)] text-[var(--color-muted)] hover:bg-[var(--color-raised)] hover:text-[var(--color-ink)]'
               }`}
             >
               {t}
@@ -454,14 +459,14 @@ function Detail({
           value={brew.notes ?? ''}
           onChange={(e) => onChange(brew.id, { notes: e.target.value })}
           rows={2}
-          className="mt-2 w-full rounded-xl border border-[var(--color-line)] bg-transparent p-3 text-sm"
+          className="mt-2 w-full p-3 text-sm rounded-lg bg-[var(--color-raised)] outline-none transition-colors duration-200 focus:bg-[var(--color-bg)] focus:ring-2 focus:ring-[var(--color-accent)]"
         />
       </label>
 
       <div className="mt-4 flex gap-2">
         <Link
           href={`/dial-in/?brew=${brew.id}`}
-          className="tap compact flex-1 rounded-xl border border-[var(--color-line)] px-4 text-center text-sm leading-10"
+          className="tap compact flex-1 rounded-lg px-4 text-center text-sm leading-10 bg-[var(--color-raised)] font-semibold transition-all duration-200 hover:bg-[var(--color-line)]"
         >
           Dial this in
         </Link>
@@ -470,14 +475,14 @@ function Detail({
             <button
               type="button"
               onClick={() => onDelete(brew.id)}
-              className="compact flex-1 rounded-xl bg-[var(--color-danger)] px-4 text-sm font-medium text-[var(--color-on-accent)]"
+              className="compact flex-1 rounded-lg bg-[var(--color-danger)] px-4 text-sm font-medium text-[var(--color-on-accent)]"
             >
               Delete for good
             </button>
             <button
               type="button"
               onClick={() => setConfirming(false)}
-              className="compact rounded-xl border border-[var(--color-line)] px-4 text-sm"
+              className="compact rounded-lg px-4 text-sm bg-[var(--color-raised)] font-semibold transition-all duration-200 hover:bg-[var(--color-line)]"
             >
               Cancel
             </button>
@@ -486,7 +491,7 @@ function Detail({
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="compact rounded-xl border border-[var(--color-line)] px-4 text-sm text-[var(--color-muted)]"
+            className="compact rounded-lg px-4 text-sm text-[var(--color-muted)] hover:text-[var(--color-ink)] bg-[var(--color-raised)] font-semibold transition-all duration-200 hover:bg-[var(--color-line)]"
           >
             Delete
           </button>
@@ -498,22 +503,41 @@ function Detail({
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto max-w-2xl px-5 py-8">
-      <Link href="/" className="text-sm text-[var(--color-muted)]">
-        ← Extraction
-      </Link>
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight">Journal</h1>
-      {children}
+    <main>
+      <PageHeader title="Journal" />
+      <PageBody>{children}</PageBody>
     </main>
   )
 }
 
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+/**
+ * Each stat takes its own colour. Four identical brown tiles read as one block
+ * of noise; four colours make the row scannable without a single line or edge.
+ */
+function Stat({
+  label,
+  value,
+  sub,
+  tone = 'ink',
+}: {
+  label: string
+  value: string
+  sub?: string
+  tone?: 'ink' | 'accent' | 'good' | 'warn'
+}) {
+  const colour = {
+    ink: 'text-[var(--color-ink)]',
+    accent: 'text-[var(--color-accent)]',
+    good: 'text-[var(--color-good-ink)]',
+    warn: 'text-[var(--color-warn)]',
+  }[tone]
   return (
-    <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-3 py-3">
-      <p className="text-[10px] uppercase tracking-widest text-[var(--color-faint)]">{label}</p>
-      <p className="mt-1 text-xl font-semibold tabular-nums">{value}</p>
-      {sub && <p className="text-xs text-[var(--color-faint)]">{sub}</p>}
+    <div className="rounded-lg bg-[var(--color-surface)] px-3 py-3">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-faint)]">
+        {label}
+      </p>
+      <p className={`mt-1 text-2xl font-extrabold tabular-nums leading-none ${colour}`}>{value}</p>
+      {sub && <p className="mt-1 text-xs text-[var(--color-faint)]">{sub}</p>}
     </div>
   )
 }
@@ -541,10 +565,10 @@ function FilterPill({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`compact rounded-full border px-4 text-sm ${
+      className={`compact rounded-full px-4 text-sm transition-all duration-200 ${
         active
-          ? 'border-[var(--color-accent)] bg-[var(--color-raised)]'
-          : 'border-[var(--color-line)] text-[var(--color-muted)]'
+          ? 'bg-[var(--color-accent)] font-semibold text-[var(--color-on-accent)]'
+          : 'bg-[var(--color-surface)] text-[var(--color-muted)] hover:bg-[var(--color-raised)] hover:text-[var(--color-ink)]'
       }`}
     >
       {children}

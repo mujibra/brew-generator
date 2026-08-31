@@ -141,7 +141,7 @@ export function RecipeBuilder() {
     <div className="pb-28">
       {/* Sticky summary: the numbers stay visible while you change the inputs. */}
       {result && (
-        <div className="sticky top-0 z-20 border-b border-[var(--color-line)] bg-[var(--color-bg)]/95 backdrop-blur">
+        <div className="sticky top-0 z-20 border-b-2 border-[var(--color-line)] bg-[var(--color-bg)]">
           <div className="mx-auto flex max-w-2xl items-center gap-4 px-5 py-3">
             <Link href="/brew/" className="shrink-0 text-sm text-[var(--color-muted)]">
               ←
@@ -221,7 +221,7 @@ export function RecipeBuilder() {
 
         <Step n={4} title="The bean">
           {beans.length > 0 && (
-            <div className="mb-3 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+            <div className="mb-3 rounded-lg bg-[var(--color-surface)] p-4">
               <label htmlFor="bean" className="text-sm">
                 Use a bag from your shelf
               </label>
@@ -248,7 +248,7 @@ export function RecipeBuilder() {
               )}
             </div>
           )}
-          <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+          <div className="rounded-lg bg-[var(--color-surface)] p-4">
             <Stepper
               label="Dose"
               unit="g"
@@ -278,7 +278,7 @@ export function RecipeBuilder() {
               <button
                 type="button"
                 onClick={() => setRatioOverride(null)}
-                className="compact mt-2 rounded-full border border-[var(--color-line)] px-3 text-sm text-[var(--color-muted)]"
+                className="compact mt-2 rounded-full bg-[var(--color-raised)] px-3 text-sm font-semibold text-[var(--color-muted)] transition-all duration-200 hover:bg-[var(--color-line)] hover:text-[var(--color-ink)]"
               >
                 Use the suggestion for {goal}
               </button>
@@ -288,10 +288,10 @@ export function RecipeBuilder() {
               type="button"
               onClick={() => setIced(!iced)}
               aria-pressed={iced}
-              className={`w-full rounded-xl border px-4 py-3 text-left ${
+              className={`w-full rounded-lg px-4 py-3 text-left transition-all duration-200 ${
                 iced
-                  ? 'border-[var(--color-accent)] bg-[var(--color-raised)]'
-                  : 'border-[var(--color-line)]'
+                  ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+                  : 'bg-[var(--color-surface)] hover:bg-[var(--color-raised)]'
               }`}
             >
               <span className="block font-medium">Japanese iced</span>
@@ -302,7 +302,7 @@ export function RecipeBuilder() {
               </span>
             </button>
             {iced && (
-              <div className="mt-3 rounded-xl border border-[var(--color-line)] p-4">
+              <div className="mt-3 rounded-lg bg-[var(--color-raised)] p-4">
                 <Stepper
                   label="Ice"
                   unit="%"
@@ -321,7 +321,7 @@ export function RecipeBuilder() {
                   <button
                     type="button"
                     onClick={() => setIcePct(null)}
-                    className="compact mt-2 rounded-full border border-[var(--color-line)] px-3 text-sm text-[var(--color-muted)]"
+                    className="compact mt-2 rounded-full bg-[var(--color-raised)] px-3 text-sm font-semibold text-[var(--color-muted)] transition-all duration-200 hover:bg-[var(--color-line)] hover:text-[var(--color-ink)]"
                   >
                     Back to 40 %
                   </button>
@@ -355,7 +355,7 @@ export function RecipeBuilder() {
 
         <Step n={5} title="Grinder">
           {grinder ? (
-            <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+            <div className="rounded-lg bg-[var(--color-surface)] p-4">
               <div className="flex items-baseline justify-between gap-3">
                 <span className="min-w-0">
                   <span className="block truncate font-medium">{grinder.name}</span>
@@ -367,7 +367,7 @@ export function RecipeBuilder() {
                 </span>
                 <Link
                   href="/gear/"
-                  className="tap compact shrink-0 rounded-xl border border-[var(--color-line)] px-4 text-sm leading-10"
+                  className="tap compact shrink-0 rounded-lg bg-[var(--color-raised)] px-4 text-sm font-semibold leading-10 transition-all duration-200 hover:bg-[var(--color-line)]"
                 >
                   Change
                 </Link>
@@ -380,10 +380,7 @@ export function RecipeBuilder() {
               )}
             </div>
           ) : (
-            <Link
-              href="/gear/"
-              className="tap block rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4"
-            >
+            <Link href="/gear/" className="tap block rounded-lg bg-[var(--color-surface)] p-4">
               <span className="block font-medium">Set your grinder</span>
               <span className="mt-1 block text-sm text-[var(--color-muted)]">
                 Then the grind below arrives in your own clicks instead of microns.
@@ -394,7 +391,7 @@ export function RecipeBuilder() {
 
         {!isImmersion && (
           <Step n={6} title="How many pours?">
-            <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+            <div className="rounded-lg bg-[var(--color-surface)] p-4">
               <Stepper
                 label="First 40 % of the water"
                 unit={pours.a === 1 ? 'pour' : 'pours'}
@@ -438,7 +435,7 @@ export function RecipeBuilder() {
                   <button
                     type="button"
                     onClick={() => setPourOverride(null)}
-                    className="compact rounded-full border border-[var(--color-line)] px-3 text-sm text-[var(--color-muted)]"
+                    className="compact rounded-full bg-[var(--color-raised)] px-3 text-sm font-semibold text-[var(--color-muted)] transition-all duration-200 hover:bg-[var(--color-line)] hover:text-[var(--color-ink)]"
                   >
                     Use the suggestion
                   </button>
@@ -446,7 +443,7 @@ export function RecipeBuilder() {
               </div>
 
               {plan?.overCap && (
-                <p className="mt-3 rounded-xl bg-[var(--color-raised)] p-3 text-sm text-[var(--color-warn)]">
+                <p className="mt-3 rounded-lg bg-[var(--color-raised)] p-3 text-sm text-[var(--color-warn)]">
                   More than the {brewer.maxPours} pours this bed comfortably takes. Every extra pour
                   adds agitation.
                 </p>
@@ -457,7 +454,7 @@ export function RecipeBuilder() {
 
         {isImmersion && (
           <Step n={6} title="Pours">
-            <p className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4 text-[var(--color-muted)]">
+            <p className="rounded-lg bg-[var(--color-surface)] p-4 text-[var(--color-muted)]">
               {brewer.name} is full immersion — one pour, then the steep does the work. Pour count
               is not a lever here.
             </p>
@@ -470,7 +467,7 @@ export function RecipeBuilder() {
             <h2 className="text-2xl font-semibold">Your recipe</h2>
 
             {result.recipe.iced && (
-              <div className="mt-4 rounded-2xl border border-[var(--color-accent)] bg-[var(--color-surface)] p-4">
+              <div className="mt-4 rounded-lg bg-[var(--color-accent-soft)] p-4">
                 <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">
                   Japanese iced
                 </p>
@@ -487,7 +484,7 @@ export function RecipeBuilder() {
               </div>
             )}
 
-            <div className="mt-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+            <div className="mt-4 rounded-lg bg-[var(--color-surface)] p-4">
               <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">Grind</p>
               <p className="mt-1 text-xl font-medium">{result.recipe.grind.text}</p>
               <p className="mt-2 text-sm text-[var(--color-faint)]">{result.recipe.grind.caveat}</p>
@@ -496,7 +493,7 @@ export function RecipeBuilder() {
             {result.recipe.warnings.map((w) => (
               <p
                 key={w}
-                className="mt-3 rounded-2xl border border-[var(--color-warn)]/40 bg-[var(--color-raised)] p-4 text-sm text-[var(--color-warn)]"
+                className="mt-3 rounded-lg bg-[var(--color-warn-block)] p-4 text-sm font-medium text-[var(--color-warn)]"
               >
                 {w}
               </p>
@@ -510,7 +507,7 @@ export function RecipeBuilder() {
               {result.recipe.prep.map((step, i) => (
                 <li
                   key={step.label}
-                  className="flex gap-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3"
+                  className="flex gap-4 rounded-lg bg-[var(--color-surface)] px-4 py-3"
                 >
                   <span className="w-12 shrink-0 font-mono text-sm tabular-nums text-[var(--color-faint)]">
                     {i + 1}
@@ -533,7 +530,7 @@ export function RecipeBuilder() {
               {result.recipe.pours.map((p) => (
                 <li
                   key={p.index}
-                  className="flex items-center gap-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3"
+                  className="flex items-center gap-4 rounded-lg bg-[var(--color-surface)] px-4 py-3"
                 >
                   <span className="w-12 shrink-0 font-mono text-sm tabular-nums text-[var(--color-muted)]">
                     {formatElapsed(p.startS * 1000)}
@@ -569,17 +566,14 @@ export function RecipeBuilder() {
             </h3>
             <div className="mt-3 space-y-2">
               {result.recipe.rationale.map((s) => (
-                <details
-                  key={s.heading}
-                  className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3"
-                >
+                <details key={s.heading} className="rounded-lg bg-[var(--color-surface)] px-4 py-3">
                   <summary className="cursor-pointer list-none">
                     <span className="flex items-baseline justify-between gap-3">
                       <span className="text-[var(--color-muted)]">{s.heading}</span>
                       <span className="text-right font-medium">{s.value}</span>
                     </span>
                   </summary>
-                  <ul className="mt-3 space-y-2 border-t border-[var(--color-line)] pt-3 text-sm text-[var(--color-muted)]">
+                  <ul className="mt-3 space-y-2 border-t-2 border-[var(--color-line)] pt-3 text-sm text-[var(--color-muted)]">
                     {s.lines.map((l) => (
                       <li key={l}>{l}</li>
                     ))}
@@ -593,12 +587,12 @@ export function RecipeBuilder() {
 
       {/* Sticky action: never hunt for the button at the bottom of a long form. */}
       {result && (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--color-line)] bg-[var(--color-bg)]/95 px-5 py-3 backdrop-blur">
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t-2 border-[var(--color-line)] bg-[var(--color-bg)] px-5 py-3">
           <div className="mx-auto max-w-2xl">
             <button
               type="button"
               onClick={brewIt}
-              className="w-full rounded-2xl bg-[var(--color-accent)] py-4 text-lg font-semibold text-[var(--color-on-accent)]"
+              className="w-full rounded-lg bg-[var(--color-accent)] py-4 text-lg font-semibold text-[var(--color-on-accent)]"
             >
               Brew this · {result.recipe.doseG}:{result.recipe.waterG} ·{' '}
               {formatElapsed(result.compiled.totalS * 1000)}
@@ -633,10 +627,10 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   return (
     <section className="mt-10">
       <h2 className="mb-3 flex items-center gap-2.5">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[var(--color-line-strong)] text-xs tabular-nums text-[var(--color-muted)]">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-line)] text-xs font-bold tabular-nums text-[var(--color-ink)]">
           {n}
         </span>
-        <span className="text-sm font-medium uppercase tracking-widest text-[var(--color-muted)]">
+        <span className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-muted)]">
           {title}
         </span>
       </h2>
@@ -654,7 +648,7 @@ function Hint({ children }: { children: React.ReactNode }) {
 }
 
 function Divider() {
-  return <div className="my-4 h-px bg-[var(--color-line)]" />
+  return <div className="my-4 h-0.5 rounded-full bg-[var(--color-line)]" />
 }
 
 function Card({
@@ -677,22 +671,28 @@ function Card({
       aria-checked={selected}
       aria-label={`${group}: ${title}`}
       onClick={onSelect}
-      className={`rounded-2xl border px-4 py-3 text-left transition-colors ${
+      className={`rounded-lg px-4 py-3 text-left transition-all duration-200 ${
         selected
-          ? 'border-[var(--color-accent)] bg-[var(--color-raised)]'
-          : 'border-[var(--color-line)] bg-[var(--color-surface)]'
+          ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+          : 'bg-[var(--color-surface)] hover:scale-[1.02] hover:bg-[var(--color-raised)]'
       }`}
     >
       <span className="flex items-start gap-2">
         <span
           aria-hidden
-          className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-            selected ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-line-strong)]'
+          className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${
+            selected ? 'bg-[var(--color-on-accent)]' : 'bg-[var(--color-line-strong)]'
           }`}
         />
         <span className="min-w-0">
-          <span className="block font-medium">{title}</span>
-          <span className="mt-0.5 block text-sm text-[var(--color-faint)]">{subtitle}</span>
+          <span className="block font-bold tracking-tight">{title}</span>
+          <span
+            className={`mt-0.5 block text-sm leading-snug ${
+              selected ? 'text-[var(--color-on-accent)]' : 'text-[var(--color-faint)]'
+            }`}
+          >
+            {subtitle}
+          </span>
         </span>
       </span>
     </button>
@@ -714,10 +714,10 @@ function Pill({
       role="radio"
       aria-checked={selected}
       onClick={onSelect}
-      className={`rounded-full border px-4 text-sm transition-colors ${
+      className={`rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
         selected
-          ? 'border-[var(--color-accent)] bg-[var(--color-raised)] text-[var(--color-ink)]'
-          : 'border-[var(--color-line)] text-[var(--color-muted)]'
+          ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+          : 'bg-[var(--color-surface)] text-[var(--color-muted)] hover:bg-[var(--color-raised)] hover:text-[var(--color-ink)]'
       }`}
     >
       {label}
@@ -755,7 +755,7 @@ function Stepper({
             aria-label={`Decrease ${label}`}
             onClick={() => onChange(clamped(value - step))}
             disabled={value <= min}
-            className="h-11 w-11 rounded-xl border border-[var(--color-line)] text-lg disabled:opacity-30"
+            className="h-11 w-11 rounded-lg bg-[var(--color-raised)] text-lg font-bold transition-all duration-200 hover:bg-[var(--color-line)] disabled:opacity-30 disabled:hover:bg-[var(--color-raised)]"
           >
             −
           </button>
@@ -768,7 +768,7 @@ function Stepper({
             aria-label={`Increase ${label}`}
             onClick={() => onChange(clamped(value + step))}
             disabled={value >= max}
-            className="h-11 w-11 rounded-xl border border-[var(--color-line)] text-lg disabled:opacity-30"
+            className="h-11 w-11 rounded-lg bg-[var(--color-raised)] text-lg font-bold transition-all duration-200 hover:bg-[var(--color-line)] disabled:opacity-30 disabled:hover:bg-[var(--color-raised)]"
           >
             +
           </button>
@@ -803,7 +803,7 @@ function NumberField({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="optional"
-            className="h-11 w-24 rounded-xl border border-[var(--color-line)] bg-transparent px-3 text-right tabular-nums"
+            className="h-11 w-24 rounded-lg bg-[var(--color-raised)] px-3 text-right tabular-nums outline-none focus:bg-[var(--color-bg)] focus:ring-2 focus:ring-[var(--color-accent)]"
           />
           <span className="w-10 text-sm text-[var(--color-muted)]">{unit}</span>
         </span>

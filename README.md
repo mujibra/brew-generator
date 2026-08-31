@@ -93,7 +93,8 @@ Working:
   writes to IndexedDB.
 - **/brew/build** — generates a full manual from brewer, grinder, roast level,
   altitude, days off roast and what you want in the cup: pour count, grams per
-  pour, timings, grind and temperature, each with its reasoning attached.
+  pour, timings, grind and temperature, each with its reasoning attached. The
+  ratio can be overridden by hand, and a Japanese-iced toggle brews hot onto ice.
 - **/dial-in** — symptom to one action, in your grinder's own clicks, with the
   full ranking in expert mode. Diagnoses a specific brew when the journal sends
   one (`/dial-in/?brew=<id>`), prefilling the symptom from its tags and the
@@ -103,7 +104,8 @@ Working:
 - **/learn** — 18 knowledge cards on extraction, grind, roast, water and tasting,
   searchable by symptom ("flat", "drying") rather than by jargon. Each has a
   Quick / Standard / Deep depth toggle, sources, and a confidence label.
-- **/journal** — every logged brew, searchable and filterable, with a brew
+- **/journal** — every logged brew records the dripper it was made on and what
+  the cup was aimed at, and is searchable and filterable, with a brew
   control chart, a score-weighted personal preference zone, per-recipe averages,
   inline editing, and CSV/JSON export.
 - **/shelf** — bags with freshness state, remaining dose and brews-left, a
@@ -116,7 +118,7 @@ Working:
 The app is an installable PWA and works fully offline: every route and asset is
 precached at build time.
 
-Built and tested with no UI yet: recipe scaling. 265 tests.
+Built and tested with no UI yet: recipe scaling. 310 tests.
 
 Not built: a tools index (F9), saving a generated recipe to a library (F2.2),
 onboarding (13.3), an app-wide depth setting (13.2), cupping (F8), the rest of
@@ -194,6 +196,13 @@ reports which input moved which lever. Roast level dominates grind and
 temperature; altitude is a secondary density proxy; the goal picks the ratio and
 the pour split. Brewer characteristics in `lib/recipes/brewers.ts` cap what the
 bed will tolerate.
+
+The goal's ratio is a default, not a lock — a manual override moves only the
+water, because ratio is strength and grind is extraction. Japanese iced takes
+40 % of the declared water out as ice in the carafe rather than adding ice
+afterwards, so the drink lands at full strength, and grinds 30 µm finer since
+less hot water through the bed means less contact time. It is refused on a
+French press, which cannot drip.
 
 Grind advice always prefers an offset from the user's own baseline setting over
 an absolute micron figure, because cross-grinder micron claims are not reliable

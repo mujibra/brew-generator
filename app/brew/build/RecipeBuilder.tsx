@@ -48,6 +48,8 @@ export function RecipeBuilder() {
       .catch(() => setGear(emptyGear(Date.now())))
   }, [])
   const [pourOverride, setPourOverride] = useState<{ a: number; b: number } | null>(null)
+  const [ratioOverride, setRatioOverride] = useState<number | null>(null)
+  const [iced, setIced] = useState(false)
 
   const brewer = BREWER_LIST.find((b) => b.id === brewerId)!
   const isImmersion = brewer.mode === 'immersion'
@@ -90,6 +92,8 @@ export function RecipeBuilder() {
         roastLevel,
         ...(altitude === '' ? {} : { altitudeMasl: Number(altitude) }),
         ...(daysOffRoast === '' ? {} : { daysOffRoast: Number(daysOffRoast) }),
+        ...(ratioOverride === null ? {} : { ratioOverride }),
+        ...(iced ? { iced: true } : {}),
         ...(grinderId === '' ? {} : { grinderId }),
         ...(baseline === undefined ? {} : { baselineSetting: baseline }),
         ...(pourOverride ? { poursOverride: pourOverride } : {}),
@@ -103,7 +107,19 @@ export function RecipeBuilder() {
     } catch {
       return null
     }
-  }, [brewerId, goal, roastLevel, doseG, altitude, daysOffRoast, grinderId, baseline, pourOverride])
+  }, [
+    brewerId,
+    goal,
+    roastLevel,
+    doseG,
+    altitude,
+    daysOffRoast,
+    grinderId,
+    baseline,
+    pourOverride,
+    ratioOverride,
+    iced,
+  ])
 
   const plan = result?.recipe.pourPlan
   const pours = pourOverride ?? plan?.counts ?? { a: 1, b: 2 }
@@ -241,6 +257,48 @@ export function RecipeBuilder() {
               hint={`This ${brewer.name} works best between ${brewer.doseRangeG.min} and ${brewer.doseRangeG.max} g.`}
             />
             <Divider />
+            <Stepper
+              label="Ratio"
+              unit={`1:${(ratioOverride ?? result?.recipe.ratio ?? 16).toFixed(1).replace(/\.0$/, '')}`}
+              value={ratioOverride ?? result?.recipe.ratio ?? 16}
+              min={12}
+              max={20}
+              step={0.5}
+              onChange={setRatioOverride}
+              hint={
+                ratioOverride === null
+                  ? `Chosen for ${goal}. More water per gram is a lighter cup at the same extraction.`
+                  : `${result ? Math.round(1000 / result.recipe.ratio) : ''} g per litre. Ratio sets strength, not sour or bitter.`
+              }
+            />
+            {ratioOverride !== null && (
+              <button
+                type="button"
+                onClick={() => setRatioOverride(null)}
+                className="compact mt-2 rounded-full border border-[var(--color-line)] px-3 text-sm text-[var(--color-muted)]"
+              >
+                Use the suggestion for {goal}
+              </button>
+            )}
+            <Divider />
+            <button
+              type="button"
+              onClick={() => setIced(!iced)}
+              aria-pressed={iced}
+              className={`w-full rounded-xl border px-4 py-3 text-left ${
+                iced
+                  ? 'border-[var(--color-accent)] bg-[var(--color-raised)]'
+                  : 'border-[var(--color-line)]'
+              }`}
+            >
+              <span className="block font-medium">Japanese iced</span>
+              <span className="mt-1 block text-sm text-[var(--color-muted)]">
+                {iced && result?.recipe.iced
+                  ? `${result.recipe.ice.hotWaterG} g hot onto ${result.recipe.ice.iceG} g of ice — same total, full strength.`
+                  : 'Brew hot straight onto ice. Chills in seconds and keeps the aromatics a slow cool-down loses.'}
+              </span>
+            </button>
+            <Divider />
             <NumberField
               label="Altitude"
               unit="masl"
@@ -374,6 +432,23 @@ export function RecipeBuilder() {
         {result && (
           <section className="mt-14">
             <h2 className="text-2xl font-semibold">Your recipe</h2>
+
+            {result.recipe.iced && (
+              <div className="mt-4 rounded-2xl border border-[var(--color-accent)] bg-[var(--color-surface)] p-4">
+                <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">
+                  Japanese iced
+                </p>
+                <p className="mt-1 text-xl font-medium tabular-nums">
+                  {result.recipe.ice.hotWaterG} g hot
+                  <span className="text-[var(--color-faint)]"> onto </span>
+                  {result.recipe.ice.iceG} g ice
+                </p>
+                <p className="mt-2 text-sm text-[var(--color-muted)]">
+                  The ice is part of the {result.recipe.waterG} g, not extra — so it finishes at
+                  full strength rather than watered down.
+                </p>
+              </div>
+            )}
 
             <div className="mt-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
               <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">Grind</p>

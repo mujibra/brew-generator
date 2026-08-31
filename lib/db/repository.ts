@@ -92,6 +92,13 @@ export type RecipeRecord = Entity & {
 export type BrewRecord = Entity & {
   startedAt: number
   recipeId?: Id
+  /** The brewer used. Recorded separately because a recipe can be deleted. */
+  brewerId?: string
+  brewerName?: string
+  /** What the cup was aimed at: sweetness, acidity, body, clarity, balance. */
+  goal?: string
+  /** Japanese iced — brewed onto ice rather than hot. */
+  iced?: boolean
   beanId?: Id
   /** Days off roast at brew time, frozen in so it survives the bean being edited. */
   daysOffRoast?: number

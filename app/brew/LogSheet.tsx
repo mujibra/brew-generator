@@ -149,6 +149,11 @@ export function LogSheet({
         startedAt: session.startedAtEpoch ?? now,
         recipeId: recipe.id,
         ...(bean ? { beanId: bean.id } : {}),
+        // The method and the goal, so the journal can say what this actually was.
+        brewerId: recipe.brewerId ?? recipe.methodId,
+        brewerName: recipe.methodName,
+        ...(recipe.goal ? { goal: recipe.goal } : { goal: recipe.intent }),
+        ...(recipe.iced ? { iced: true } : {}),
         ...(grind.trim() === '' ? {} : { grindSetting: grind.trim() }),
         ...(gear?.grinderId ? { grinderId: gear.grinderId } : {}),
         ...(age !== undefined ? { daysOffRoast: age } : {}),

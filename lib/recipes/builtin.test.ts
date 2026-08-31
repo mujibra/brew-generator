@@ -12,8 +12,25 @@ describe('built-in recipes', () => {
   it('each declares its total water and reaches it', () => {
     for (const r of RECIPES) {
       const c = compileRecipe(toRecipeInput(r))
-      expect(c.totalWaterG).toBe(r.waterG)
-      expect(targetMassAt(c, c.totalS)).toBe(r.waterG)
+      // On an iced recipe the ice is already in the carafe, so the pour
+      // schedule only covers the hot water.
+      const poured = r.waterG - (r.iceG ?? 0)
+      expect(c.totalWaterG, r.id).toBe(poured)
+      expect(targetMassAt(c, c.totalS), r.id).toBe(poured)
+    }
+  })
+
+  it('an iced recipe keeps its ice inside the declared total', () => {
+    for (const r of RECIPES.filter((x) => x.iced)) {
+      expect(r.iceG, r.id).toBeGreaterThan(0)
+      expect(r.iceG!, r.id).toBeLessThan(r.waterG)
+      // Roughly the standard 40 % split.
+      expect(r.iceG! / r.waterG, r.id).toBeGreaterThan(0.3)
+      expect(r.iceG! / r.waterG, r.id).toBeLessThan(0.5)
+      expect(
+        r.prep?.some((p) => /ice/i.test(p.instruction)),
+        r.id,
+      ).toBe(true)
     }
   })
 

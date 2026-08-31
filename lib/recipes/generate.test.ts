@@ -326,3 +326,100 @@ describe('the recipe carries its grind number, not only the sentence', () => {
     expect(toRunnable(gen({})).grindSetting).toBeUndefined()
   })
 })
+
+describe('Japanese iced', () => {
+  const iced = (over: Partial<GenerateInput> = {}) => gen({ iced: true, ...over })
+
+  // The whole point: the ice is part of the recipe water, so the drink lands at
+  // full strength instead of being watered down by ice added afterwards.
+  it('takes the ice out of the total rather than adding to it', () => {
+    const hot = gen()
+    const cold = iced()
+    expect(cold.waterG).toBe(hot.waterG)
+    expect(cold.ice.iceG + cold.ice.hotWaterG).toBe(cold.waterG)
+    expect(cold.ice.iceG).toBeGreaterThan(0)
+  })
+
+  it('splits roughly 40 % as ice', () => {
+    const r = iced()
+    expect(r.ice.iceG / r.waterG).toBeGreaterThan(0.3)
+    expect(r.ice.iceG / r.waterG).toBeLessThan(0.5)
+  })
+
+  it('pours only the hot water, because the ice is already in the carafe', () => {
+    const r = iced()
+    expect(r.pours.at(-1)?.toG).toBe(r.ice.hotWaterG)
+    expect(r.pours.at(-1)?.toG).toBeLessThan(r.waterG)
+  })
+
+  it('tells you to weigh the ice before brewing', () => {
+    const prep = iced()
+      .prep.map((p) => `${p.label} ${p.instruction}`)
+      .join(' ')
+    expect(prep).toMatch(/ice/i)
+    expect(prep).toMatch(/zero your scale/i)
+  })
+
+  // Less hot water through the bed means less time to extract in.
+  it('grinds finer than the hot version', () => {
+    expect(iced().grind.targetMicrons).toBeLessThan(gen().grind.targetMicrons)
+  })
+
+  it('explains the method rather than just splitting the number', () => {
+    const ice = iced().rationale.find((s) => s.heading === 'Ice')
+    expect(ice).toBeDefined()
+    expect(ice?.lines.join(' ')).toMatch(/aromatic/i)
+    expect(ice?.lines.join(' ')).toMatch(/full strength/i)
+  })
+
+  it('is off by default, and adds nothing when off', () => {
+    const hot = gen()
+    expect(hot.iced).toBe(false)
+    expect(hot.ice).toEqual({ iceG: 0, hotWaterG: hot.waterG })
+    expect(hot.rationale.some((s) => s.heading === 'Ice')).toBe(false)
+  })
+
+  it('refuses on a French press, and says why, instead of pretending', () => {
+    const r = iced({ brewerId: 'frenchPress', doseG: 30 })
+    expect(r.iced).toBe(false)
+    expect(r.ice.iceG).toBe(0)
+    expect(r.warnings.join(' ')).toMatch(/cannot drip onto ice/i)
+  })
+
+  it('works on the AeroPress, which presses onto ice', () => {
+    const r = iced({ brewerId: 'aeropress', doseG: 15 })
+    expect(r.iced).toBe(true)
+    expect(r.ice.iceG).toBeGreaterThan(0)
+  })
+
+  it('carries the method, goal and ice onto the runnable recipe', () => {
+    const r = iced()
+    const runnable = toRunnable(r)
+    expect(runnable.iced).toBe(true)
+    expect(runnable.iceG).toBe(r.ice.iceG)
+    expect(runnable.brewerId).toBe('v60')
+    expect(runnable.goal).toBe(r.goal)
+  })
+})
+
+describe('manual ratio', () => {
+  it('overrides the goal default and moves the water with it', () => {
+    expect(gen({ goal: 'body' }).ratio).toBe(15)
+    const wide = gen({ goal: 'body', ratioOverride: 18 })
+    expect(wide.ratio).toBe(18)
+    expect(wide.waterG).toBe(360) // 20 g at 1:18
+  })
+
+  it('leaves grind and temperature alone — ratio is strength, not extraction', () => {
+    const a = gen({ ratioOverride: 14 })
+    const b = gen({ ratioOverride: 19 })
+    expect(a.grind.targetMicrons).toBe(b.grind.targetMicrons)
+    expect(a.waterTempC).toBe(b.waterTempC)
+  })
+
+  it('still splits the ice correctly at a custom ratio', () => {
+    const r = gen({ iced: true, ratioOverride: 18 })
+    expect(r.waterG).toBe(360)
+    expect(r.ice.iceG + r.ice.hotWaterG).toBe(360)
+  })
+})

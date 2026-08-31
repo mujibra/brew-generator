@@ -43,6 +43,8 @@ export type GenerateInput = {
   ratioOverride?: number
   /** Pours after the bloom, split across the two blocks. Overrides the goal. */
   poursOverride?: { a: number; b: number }
+  /** Japanese iced: brew hot onto ice instead of chilling afterwards. */
+  iced?: boolean
 }
 
 export type Pour = {
@@ -68,6 +70,9 @@ export type GeneratedRecipe = {
   waterG: number
   ratio: number
   waterTempC: number
+  iced: boolean
+  /** Split of the total water when brewing onto ice. Both are zero when hot. */
+  ice: { iceG: number; hotWaterG: number }
   grind: GrindAdvice
   grinder?: Grinder
   pours: Pour[]
@@ -173,6 +178,23 @@ function altitudeTempOffset(m?: number): number {
   return -2
 }
 
+/**
+ * Japanese iced coffee — flash brewing.
+ *
+ * Part of the brew water is placed in the carafe as ice, and the coffee is
+ * brewed hot straight onto it. The total water is unchanged, so the finished
+ * drink lands at full strength rather than the watery result of pouring hot
+ * coffee over ice afterwards. Chilling in seconds also traps the volatile
+ * aromatics that a slow cool-down drives off.
+ *
+ * 40 % as ice is the common split: enough to chill a full brew, not so much
+ * that the bed is starved of water.
+ */
+const ICE_FRACTION = 0.4
+
+/** Less hot water through the bed means less contact time to extract in. */
+const ICED_MICRON_OFFSET = -30
+
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
 const round5 = (v: number) => Math.round(v / 5) * 5
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
@@ -193,6 +215,16 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
   const ratio = input.ratioOverride ?? RATIO_BY_GOAL[input.goal]
   const waterG = round5(input.doseG * ratio)
 
+  // --- Ice, for a Japanese iced brew
+  const iced = Boolean(input.iced) && brewer.id !== 'frenchPress'
+  if (input.iced && brewer.id === 'frenchPress') {
+    warnings.push(
+      'A French press cannot drip onto ice, so this is brewed hot. For iced, use a dripper or the AeroPress.',
+    )
+  }
+  const iceG = iced ? round5(waterG * ICE_FRACTION) : 0
+  const hotWaterG = waterG - iceG
+
   // --- Temperature
   const tempBase = TEMP_BY_ROAST[input.roastLevel]
   const tempAlt = altitudeTempOffset(input.altitudeMasl)
@@ -205,7 +237,8 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
     brewer.baseMicrons +
       MICRONS_BY_ROAST[input.roastLevel] +
       alt.offset +
-      MICRONS_BY_GOAL[input.goal],
+      MICRONS_BY_GOAL[input.goal] +
+      (iced ? ICED_MICRON_OFFSET : 0),
     400,
     1200,
   )
@@ -236,8 +269,8 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
 
   const built =
     brewer.mode === 'immersion'
-      ? buildImmersion(brewer, input, waterG, bloomS)
-      : buildPercolation(brewer, input, waterG, bloomG, bloomS, targetMicrons)
+      ? buildImmersion(brewer, input, hotWaterG, bloomS, iceG)
+      : buildPercolation(brewer, input, hotWaterG, bloomG, bloomS, targetMicrons, iceG)
 
   const rationale = buildRationale({
     input,
@@ -249,6 +282,8 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
     tempAlt,
     tempGoal,
     targetMicrons,
+    iced,
+    ice: { iceG, hotWaterG },
     altNote: alt.note,
     bloomG,
     bloomS,
@@ -274,6 +309,8 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
     waterG,
     ratio,
     waterTempC,
+    iced,
+    ice: { iceG, hotWaterG },
     grind,
     grinder,
     pours: built.pours,
@@ -359,6 +396,7 @@ function buildPercolation(
   bloomG: number,
   bloomS: number,
   targetMicrons: number,
+  iceG: number,
 ) {
   const { a: aCount, b: bCount } = resolvePours(brewer, input).counts
 
@@ -467,7 +505,13 @@ function buildPercolation(
   steps.push({ kind: 'drain', expectedS: drawdownS })
   t += drawdownS
 
-  steps.push({ kind: 'serve', instruction: 'Swirl the carafe and pour.' })
+  steps.push({
+    kind: 'serve',
+    instruction:
+      iceG > 0
+        ? 'Swirl until the last of the ice melts, then pour over fresh ice if you like.'
+        : 'Swirl the carafe and pour.',
+  })
 
   const prep: PrepSpec[] = [
     {
@@ -475,6 +519,15 @@ function buildPercolation(
       label: 'Rinse the filter',
       instruction: `Rinse with hot water to remove paper taste and preheat the ${brewer.name}. Tip the water out.`,
     },
+    ...(iceG > 0
+      ? [
+          {
+            kind: 'prepare' as const,
+            label: `Weigh ${iceG} g of ice`,
+            instruction: `Put ${iceG} g of ice in the carafe, then zero your scale with it in place. The brew drips straight onto it.`,
+          },
+        ]
+      : []),
     ...(brewer.mode === 'hybrid'
       ? [
           {
@@ -496,7 +549,13 @@ function buildPercolation(
 
 // --- Immersion: one pour, then time does the work.
 
-function buildImmersion(brewer: Brewer, input: GenerateInput, waterG: number, _bloomS: number) {
+function buildImmersion(
+  brewer: Brewer,
+  input: GenerateInput,
+  waterG: number,
+  _bloomS: number,
+  iceG: number,
+) {
   const isPress = brewer.id === 'frenchPress'
   const steepS = isPress ? 240 : input.goal === 'body' ? 150 : 105
   const pourS = Math.max(10, Math.round(waterG / brewer.pourRateGPerS))
@@ -582,6 +641,15 @@ function buildImmersion(brewer: Brewer, input: GenerateInput, waterG: number, _b
         ? 'Rinse the press with hot water.'
         : 'Rinse the paper filter in the cap, screw it on, and stand the chamber on your mug.',
     },
+    ...(iceG > 0
+      ? [
+          {
+            kind: 'prepare' as const,
+            label: `Weigh ${iceG} g of ice`,
+            instruction: `Put ${iceG} g of ice in the vessel you will press into, then zero your scale with it in place.`,
+          },
+        ]
+      : []),
     {
       kind: 'dose',
       label: `Dose ${input.doseG} g`,
@@ -604,6 +672,8 @@ function buildRationale(a: {
   tempAlt: number
   tempGoal: number
   targetMicrons: number
+  iced: boolean
+  ice: { iceG: number; hotWaterG: number }
   altNote?: string
   bloomG: number
   bloomS: number
@@ -626,9 +696,24 @@ function buildRationale(a: {
     lines: [a.brewer.character, ...(a.brewer.constraint ? [a.brewer.constraint] : [])],
   })
 
+  if (a.iced) {
+    sections.push({
+      heading: 'Ice',
+      value: `${a.ice.hotWaterG} g hot + ${a.ice.iceG} g ice`,
+      lines: [
+        'Japanese iced coffee: the ice is part of the recipe water, not an addition to it. Brewing hot straight onto it chills the coffee in seconds.',
+        'That matters because the aromatics you want are volatile — a slow cool-down lets them escape, while a flash chill traps them. It is why this tastes closer to the hot cup than cold brew does.',
+        `The total is still ${a.waterG} g, so the finished drink lands at full strength once the ice melts in. Pouring hot coffee over ice afterwards would dilute it instead.`,
+        'Ground slightly finer than the hot version, because there is less hot water passing through the bed and so less time to extract in.',
+      ],
+    })
+  }
+
   sections.push({
     heading: 'Ratio',
-    value: `${a.input.doseG} g to ${a.waterG} g — 1:${a.ratio}`,
+    value: a.iced
+      ? `${a.input.doseG} g to ${a.waterG} g — 1:${a.ratio}, ${a.ice.iceG} g of it as ice`
+      : `${a.input.doseG} g to ${a.waterG} g — 1:${a.ratio}`,
     lines: [
       goal === 'body'
         ? 'Tighter than standard: more coffee per litre is the direct route to a heavier cup, and it does it without pushing extraction up.'
@@ -746,6 +831,10 @@ export function toRunnable(r: GeneratedRecipe): BuiltinRecipe {
     waterG: r.waterG,
     waterTempC: r.waterTempC,
     grind: r.grind.text,
+    brewerId: r.brewer.id,
+    goal: r.goal,
+    iced: r.iced,
+    ...(r.ice.iceG > 0 ? { iceG: r.ice.iceG } : {}),
     // The number the recipe actually asks for. Dropping this was why the log
     // fell back to a stale baseline instead of the setting just recommended.
     ...(r.grind.settingUnits !== undefined ? { grindSetting: String(r.grind.settingUnits) } : {}),

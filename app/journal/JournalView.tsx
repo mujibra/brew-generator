@@ -293,7 +293,19 @@ export function JournalView() {
             >
               <span className="flex items-baseline justify-between gap-3">
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">{recipeName(b.recipeId)}</span>
+                  <span className="block truncate font-medium">
+                    {recipeName(b.recipeId)}
+                    {b.iced && (
+                      <span className="ml-2 rounded-full bg-[var(--color-raised)] px-2 py-0.5 text-xs font-normal text-[var(--color-muted)]">
+                        iced
+                      </span>
+                    )}
+                  </span>
+                  {(b.brewerName || b.goal) && (
+                    <span className="block truncate text-sm text-[var(--color-muted)]">
+                      {[b.brewerName, b.goal && `for ${b.goal}`].filter(Boolean).join(' · ')}
+                    </span>
+                  )}
                   <span className="block text-sm text-[var(--color-faint)] tabular-nums">
                     {new Date(b.startedAt).toLocaleDateString(undefined, {
                       day: 'numeric',
@@ -383,6 +395,9 @@ function Detail({
         <Fact label="Time" value={formatElapsed(brew.totalTimeS * 1000)} />
         {brew.waterTempC !== undefined && <Fact label="Temp" value={`${brew.waterTempC} °C`} />}
         {brew.grindSetting && <Fact label="Grind" value={brew.grindSetting} />}
+        {brew.brewerName && <Fact label="Dripper" value={brew.brewerName} />}
+        {brew.goal && <Fact label="Aimed at" value={brew.goal} />}
+        {brew.iced && <Fact label="Style" value="Japanese iced" />}
         {brew.tdsPct !== undefined && <Fact label="TDS" value={`${brew.tdsPct} %`} />}
         {brew.eyPct !== undefined && <Fact label="Yield" value={`${brew.eyPct.toFixed(1)} %`} />}
         {brew.beverageG !== undefined && <Fact label="In the cup" value={`${brew.beverageG} g`} />}

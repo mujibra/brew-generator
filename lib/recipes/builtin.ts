@@ -10,6 +10,8 @@
  */
 
 import type { RecipeInput, StepSpec } from '@/lib/brew/steps'
+import type { BrewerId } from './brewers'
+import type { BrewGoal } from './generate'
 
 export type MethodId = 'v60' | 'aeropress' | 'frenchPress' | 'switch' | 'chemex'
 
@@ -20,6 +22,17 @@ export type BuiltinRecipe = RecipeInput & {
   name: string
   methodId: MethodId
   methodName: string
+  /** The brewer this was built for. methodId collapses Kalita/Origami onto v60. */
+  brewerId?: BrewerId
+  /** What the cup was aimed at, preserved exactly rather than mapped to intent. */
+  goal?: BrewGoal
+  /** Japanese iced: part of the water is ice in the carafe. */
+  iced?: boolean
+  /**
+   * Ice mass, included in waterG. The pour schedule covers only the hot water,
+   * so `waterG - iceG` is what actually goes through the bed.
+   */
+  iceG?: number
   waterG: number
   waterTempC: number
   grind: string
@@ -95,6 +108,66 @@ export const RECIPES: BuiltinRecipe[] = [
       },
       { kind: 'drain', expectedS: 80 },
       { kind: 'serve', instruction: 'Swirl the carafe and serve. Total should land near 3:30.' },
+    ],
+  },
+  {
+    id: 'v60-japanese-iced',
+    name: 'Japanese iced V60',
+    methodId: 'v60',
+    methodName: 'Hario V60',
+    brewerId: 'v60',
+    goal: 'clarity',
+    iced: true,
+    iceG: 130,
+    doseG: 20,
+    waterG: 320,
+    waterTempC: 94,
+    grind: 'medium-fine, a touch finer than your hot V60',
+    intent: 'clarity',
+    optimisingFor: 'Iced coffee that still tastes of the bean, rather than of dilution.',
+    geometry: 'cone',
+    notes: [
+      'The 130 g of ice is part of the 320 g of water, not added to it — so the drink lands at full strength once it melts.',
+      'Chilling in seconds traps the volatile aromatics that a slow cool-down drives off. This is why it tastes closer to the hot cup than cold brew does.',
+      'Ground slightly finer than the hot version, because only 190 g of hot water passes through the bed and there is less time to extract in.',
+    ],
+    prep: [
+      rinseAndPreheat,
+      {
+        kind: 'prepare',
+        label: 'Weigh 130 g of ice',
+        instruction:
+          'Put 130 g of ice in the carafe and set the dripper on top. Zero your scale with the ice in place, so you are weighing only the water you pour.',
+      },
+      dose(20, 'medium-fine'),
+    ],
+    steps: [
+      {
+        kind: 'bloom',
+        toG: 50,
+        durationS: 45,
+        instruction: 'Pour to 50 g and swirl. The bloom is unchanged — the ice is below.',
+      },
+      { kind: 'pour', toG: 120, pourS: 12, instruction: 'Pour to 120 g.' },
+      { kind: 'wait', durationS: 25 },
+      {
+        kind: 'pour',
+        toG: 190,
+        pourS: 12,
+        instruction: 'Pour to 190 g. That is all the hot water.',
+      },
+      {
+        kind: 'agitate',
+        style: 'swirl',
+        durationS: 10,
+        instruction: 'Swirl gently to level the bed.',
+      },
+      { kind: 'drain', expectedS: 50 },
+      {
+        kind: 'serve',
+        instruction:
+          'Swirl the carafe until the last ice melts, then pour over fresh ice if you like it colder.',
+      },
     ],
   },
   {

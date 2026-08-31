@@ -18,7 +18,14 @@ import type { RoastLevel } from '@/lib/calc/freshness'
 import { type GrindAdvice, type Grinder, grindAdvice, grinderById } from '@/lib/grinders/registry'
 import { BREWERS, type Brewer, type BrewerId } from './brewers'
 import type { BuiltinRecipe } from './builtin'
-import { PROCESS_BY_ID, type ProcessId, type ProcessMethod } from './process'
+import {
+  DECAF_OFFSETS,
+  DECAF_WHY,
+  PROCESS_BY_ID,
+  type ProcessId,
+  type ProcessMethod,
+  resolveProcessId,
+} from './process'
 import { type BrewWater, type WaterAdvice, waterAdvice } from './water'
 
 export type BrewGoal = 'sweetness' | 'acidity' | 'body' | 'clarity' | 'balance'
@@ -41,6 +48,8 @@ export type GenerateInput = {
   daysOffRoast?: number
   /** How the cherry was processed. The bag says it; the shelf stores it. */
   processId?: ProcessId
+  /** Decaffeinated. Orthogonal to processing — a decaf can be washed or natural. */
+  decaf?: boolean
   /** The user's brewing water. Hardness drives extraction, alkalinity mutes it. */
   water?: BrewWater
   grinderId?: string
@@ -96,6 +105,7 @@ export type GeneratedRecipe = {
     hotRatio: number
   }
   processId?: ProcessId
+  decaf: boolean
   grind: GrindAdvice
   grinder?: Grinder
   pours: Pour[]
@@ -281,7 +291,9 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
     )
   }
 
-  const process = input.processId ? PROCESS_BY_ID[input.processId] : undefined
+  const resolvedProcessId = resolveProcessId(input.processId)
+  const process = resolvedProcessId ? PROCESS_BY_ID[resolvedProcessId] : undefined
+  const decaf = Boolean(input.decaf)
   const water = waterAdvice(input.water)
 
   // --- Ratio and water
@@ -313,7 +325,7 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
   const tempBase = TEMP_BY_ROAST[input.roastLevel]
   const tempAlt = altitudeTempOffset(input.altitudeMasl)
   const tempGoal = TEMP_BY_GOAL[input.goal]
-  const tempProcess = process ? process.tempOffsetC : 0
+  const tempProcess = (process ? process.tempOffsetC : 0) + (decaf ? DECAF_OFFSETS.tempOffsetC : 0)
   const tempWater = water ? water.tempOffsetC : 0
   const waterTempC = clamp(
     tempBase + tempAlt + tempGoal + tempProcess + tempWater + (iced ? ICED_TEMP_OFFSET : 0),
@@ -331,6 +343,7 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
       alt.offset +
       MICRONS_BY_GOAL[input.goal] +
       (process ? process.micronOffset : 0) +
+      (decaf ? DECAF_OFFSETS.micronOffset : 0) +
       (water ? water.micronOffset : 0) +
       burr.offset +
       (iced ? ICED_MICRON_OFFSET : 0),
@@ -383,6 +396,7 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
     iced,
     ice: { iceG, hotWaterG, fraction: iceFraction, hotRatio },
     process,
+    decaf,
     water,
     burr,
     tempProcess,
@@ -414,7 +428,8 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
     waterTempC,
     iced,
     ice: { iceG, hotWaterG, fraction: iceFraction, hotRatio },
-    processId: input.processId,
+    processId: resolvedProcessId,
+    decaf,
     grind,
     grinder,
     pours: built.pours,
@@ -785,6 +800,7 @@ function buildRationale(a: {
   iced: boolean
   ice: { iceG: number; hotWaterG: number; fraction: number; hotRatio: number }
   process?: ProcessMethod
+  decaf: boolean
   water?: WaterAdvice
   burr: { offset: number; note?: string }
   tempProcess: number
@@ -871,6 +887,11 @@ function buildRationale(a: {
         : `${a.process.label}: +${a.tempProcess} °C. ${a.process.why}`,
     )
   }
+  if (a.decaf) {
+    tempLines.push(
+      `${DECAF_OFFSETS.tempOffsetC} °C because it is decaffeinated: a more porous bean extracts faster, so the same heat reaches further.`,
+    )
+  }
   if (a.tempWater !== 0) {
     tempLines.push(
       `+${a.tempWater} °C for your water's alkalinity — heat is the only lever left once the buffer is neutralising acids on the way out.`,
@@ -889,8 +910,17 @@ function buildRationale(a: {
         a.process.character,
         a.process.why,
         ...(a.process.technique ? [a.process.technique] : []),
+        ...(a.process.confidence === 'emerging'
+          ? [
+              'Experimental processing is a moving target and producers are not consistent with the names. Treat these offsets as a starting point and trust the cup over them.',
+            ]
+          : []),
       ],
     })
+  }
+
+  if (a.decaf) {
+    sections.push({ heading: 'Decaf', value: 'Coarser and cooler', lines: [DECAF_WHY] })
   }
 
   if (a.water) {
@@ -925,6 +955,11 @@ function buildRationale(a: {
       a.water.micronOffset > 0
         ? `Your water is hard, so it extracts harder: ${a.water.micronOffset} µm coarser to hold the yield down.`
         : `Your water is soft, so it extracts less at any given grind: ${Math.abs(a.water.micronOffset)} µm finer to make it up.`,
+    )
+  }
+  if (a.decaf) {
+    grindLines.push(
+      `Decaf: ${DECAF_OFFSETS.micronOffset} µm coarser. Decaffeination leaves the seed swollen and porous, so water moves through it faster than through the caffeinated version.`,
     )
   }
   if (a.burr.note) grindLines.push(a.burr.note)

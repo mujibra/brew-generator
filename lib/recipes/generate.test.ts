@@ -2,7 +2,7 @@ import { compileRecipe, targetMassAt } from '@/lib/brew/steps'
 import { describe, expect, it } from 'vitest'
 import { BREWER_LIST } from './brewers'
 import { type BrewGoal, GOALS, type GenerateInput, generateRecipe, toRunnable } from './generate'
-import { processFromText } from './process'
+import { PROCESSES, decafFromText, processFromText, resolveProcessId } from './process'
 
 const base: GenerateInput = {
   brewerId: 'v60',
@@ -506,18 +506,82 @@ describe('processing method', () => {
     expect(natural.ratio).toBeGreaterThan(washed.ratio)
   })
 
-  it('treats anaerobic as the most restrained of all', () => {
-    const anaerobic = gen({ processId: 'anaerobic' })
+  it('treats a sealed ferment as more restrained than a plain natural', () => {
+    const anaerobic = gen({ processId: 'anaerobicNatural' })
     const natural = gen({ processId: 'natural' })
-    expect(anaerobic.waterTempC).toBeLessThanOrEqual(natural.waterTempC)
+    expect(anaerobic.waterTempC).toBeLessThan(natural.waterTempC)
     expect(anaerobic.grind.targetMicrons).toBeGreaterThan(natural.grind.targetMicrons)
   })
 
-  it('leaves honey on the baseline, because that is what honey is', () => {
-    const honey = gen({ processId: 'honey' })
+  it('leaves yellow honey on the baseline, the middle of the whole range', () => {
+    const honey = gen({ processId: 'honeyYellow' })
     const none = gen()
     expect(honey.waterTempC).toBe(none.waterTempC)
     expect(honey.grind.targetMicrons).toBe(none.grind.targetMicrons)
+  })
+
+  // The honey continuum has to actually be a continuum, or the four names are
+  // decoration rather than data.
+  it('walks the honey colours monotonically from washed toward natural', () => {
+    const ids = ['honeyWhite', 'honeyYellow', 'honeyRed', 'honeyBlack'] as const
+    const microns = ids.map((id) => gen({ processId: id }).grind.targetMicrons)
+    const temps = ids.map((id) => gen({ processId: id }).waterTempC)
+    for (let i = 1; i < ids.length; i++) {
+      expect(microns[i], ids[i]).toBeGreaterThan(microns[i - 1] as number)
+      expect(temps[i], ids[i]).toBeLessThan(temps[i - 1] as number)
+    }
+    // The ends of the continuum land where the neighbouring families are.
+    expect(microns[0]).toBeGreaterThanOrEqual(gen({ processId: 'washed' }).grind.targetMicrons)
+    expect(microns[3]).toBeLessThanOrEqual(gen({ processId: 'natural' }).grind.targetMicrons)
+  })
+
+  it('still resolves the ids saved before the taxonomy had families', () => {
+    expect(resolveProcessId('anaerobic')).toBe('anaerobicNatural')
+    expect(resolveProcessId('honey')).toBe('honeyYellow')
+    expect(resolveProcessId('washed')).toBe('washed')
+    expect(resolveProcessId('nonsense')).toBeUndefined()
+    // A legacy id still reaches the levers rather than being silently dropped.
+    expect(gen({ processId: 'anaerobic' as never }).grind.targetMicrons).toBe(
+      gen({ processId: 'anaerobicNatural' }).grind.targetMicrons,
+    )
+  })
+
+  it('brews the body-forward methods tighter, not looser', () => {
+    // Wet-hulled and monsooned have almost no acidity to frame, so more water
+    // per gram would only thin out the one thing they do have.
+    expect(gen({ processId: 'wetHulled' }).ratio).toBeLessThan(gen({ processId: 'washed' }).ratio)
+    expect(gen({ processId: 'monsooned' }).ratio).toBeLessThan(gen({ processId: 'washed' }).ratio)
+    expect(gen({ processId: 'monsooned' }).grind.targetMicrons).toBeGreaterThan(
+      gen({ processId: 'washed' }).grind.targetMicrons,
+    )
+  })
+
+  it('makes a co-ferment the most cautious of the ferments', () => {
+    const co = gen({ processId: 'coFerment' })
+    const yeast = gen({ processId: 'yeastInoculated' })
+    expect(co.waterTempC).toBeLessThan(yeast.waterTempC)
+    expect(co.grind.targetMicrons).toBeGreaterThan(yeast.grind.targetMicrons)
+    expect(co.rationale.find((s) => s.heading === 'Processing')?.lines.join(' ')).toMatch(
+      /adds substrate/i,
+    )
+  })
+
+  it('says out loud that the experimental offsets are provisional', () => {
+    const experimental = gen({ processId: 'thermalShock' }).rationale.find(
+      (s) => s.heading === 'Processing',
+    )
+    expect(experimental?.lines.join(' ')).toMatch(/moving target/i)
+    const classical = gen({ processId: 'washed' }).rationale.find((s) => s.heading === 'Processing')
+    expect(classical?.lines.join(' ')).not.toMatch(/moving target/i)
+  })
+
+  it('covers every id in the table without throwing', () => {
+    for (const p of PROCESSES) {
+      const r = gen({ processId: p.id })
+      expect(r.processId, p.id).toBe(p.id)
+      expect(r.grind.targetMicrons, p.id).toBeGreaterThan(0)
+      expect(r.rationale.find((s) => s.heading === 'Processing')?.value, p.id).toBe(p.label)
+    }
   })
 
   it('changes nothing at all when the process is unknown', () => {
@@ -539,15 +603,48 @@ describe('processing method', () => {
   })
 
   it('reads what the bag actually says', () => {
-    expect(processFromText('Natural Anaerobic')).toBe('anaerobic')
-    expect(processFromText('carbonic maceration')).toBe('anaerobic')
-    expect(processFromText('Red Honey')).toBe('honey')
-    expect(processFromText('pulped natural')).toBe('honey')
+    // Most specific first: the intervention outranks the drying style.
+    expect(processFromText('Thermal Shock Natural')).toBe('thermalShock')
+    expect(processFromText('Koji fermented washed')).toBe('koji')
+    expect(processFromText('Anaerobic co-ferment with strawberry')).toBe('coFerment')
+    expect(processFromText('yeast inoculated natural')).toBe('yeastInoculated')
+    expect(processFromText('Carbonic Maceration')).toBe('carbonicMaceration')
+    expect(processFromText('72h lactic')).toBe('lactic')
+
+    // An anaerobic is not one thing: pulped first, or sealed whole.
+    expect(processFromText('Natural Anaerobic')).toBe('anaerobicNatural')
+    expect(processFromText('Anaerobic washed')).toBe('anaerobicWashed')
+
+    expect(processFromText('Giling Basah')).toBe('wetHulled')
+    expect(processFromText('Sumatra Mandheling')).toBe('wetHulled')
+    expect(processFromText('Monsooned Malabar')).toBe('monsooned')
+
+    expect(processFromText('Black Honey')).toBe('honeyBlack')
+    expect(processFromText('White honey')).toBe('honeyWhite')
+    // Unqualified honey and "pulped natural" resolve to red: the most common of
+    // the four, and the middle of the continuum.
+    expect(processFromText('Honey process')).toBe('honeyRed')
+    expect(processFromText('pulped natural')).toBe('honeyRed')
+
+    expect(processFromText('Extended natural, raisin dried')).toBe('naturalExtended')
     expect(processFromText('Natural / dry process')).toBe('natural')
+    expect(processFromText('Kenya double fermented')).toBe('washedDouble')
     expect(processFromText('Fully washed')).toBe('washed')
     expect(processFromText('lavado')).toBe('washed')
+
     expect(processFromText('')).toBeUndefined()
     expect(processFromText(undefined)).toBeUndefined()
+    expect(processFromText('Ethiopia Guji, Gesha')).toBeUndefined()
+  })
+
+  it('reads decaf off the label, separately from the process', () => {
+    expect(decafFromText('Swiss Water decaf, washed')).toBe(true)
+    expect(decafFromText('Sugarcane process (EA)')).toBe(true)
+    expect(decafFromText('descafeinado')).toBe(true)
+    expect(decafFromText('Washed')).toBe(false)
+    expect(decafFromText(undefined)).toBe(false)
+    // Orthogonal, which is the whole reason decaf is not a process id.
+    expect(processFromText('Swiss Water decaf, washed')).toBe('washed')
   })
 })
 
@@ -610,5 +707,36 @@ describe('burr geometry', () => {
 
   it('changes nothing when no grinder is chosen', () => {
     expect(gen({ grinderId: undefined }).grind.targetMicrons).toBe(gen().grind.targetMicrons)
+  })
+})
+
+describe('decaf', () => {
+  it('grinds coarser and brews cooler, because the bean is more porous', () => {
+    const decaf = gen({ decaf: true })
+    const caf = gen()
+    expect(decaf.decaf).toBe(true)
+    expect(decaf.grind.targetMicrons).toBeGreaterThan(caf.grind.targetMicrons)
+    expect(decaf.waterTempC).toBeLessThan(caf.waterTempC)
+  })
+
+  // Orthogonal, not an eighteenth process: "washed decaf" has to be sayable.
+  it('stacks with a process instead of replacing it', () => {
+    const washedDecaf = gen({ processId: 'washed', decaf: true })
+    expect(washedDecaf.processId).toBe('washed')
+    expect(washedDecaf.decaf).toBe(true)
+    expect(washedDecaf.grind.targetMicrons).toBeGreaterThan(
+      gen({ processId: 'washed' }).grind.targetMicrons,
+    )
+  })
+
+  it('states the disagreement rather than hiding it', () => {
+    const section = gen({ decaf: true }).rationale.find((s) => s.heading === 'Decaf')
+    expect(section?.lines.join(' ')).toMatch(/some guides say to grind finer/i)
+    expect(section?.lines.join(' ')).toMatch(/porous/i)
+  })
+
+  it('is off by default and adds nothing', () => {
+    expect(gen().decaf).toBe(false)
+    expect(gen().rationale.some((s) => s.heading === 'Decaf')).toBe(false)
   })
 })

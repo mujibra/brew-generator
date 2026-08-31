@@ -78,6 +78,29 @@ const PHOENIX_PROCESS: Card['sources'][number] = {
   url: 'https://phoenix-coffeeroasters.com/en/blogs/all-about-coffee/washed-vs-natural-vs-honey-geschmack-verstehen',
 }
 
+const ROYAL_CM: Card['sources'][number] = {
+  title: 'A Guide to Carbonic Maceration and Anaerobic Fermentation in Coffee',
+  author: 'Royal Coffee',
+  kind: 'practitioner',
+  url: 'https://royalcoffee.com/a-guide-to-carbonic-maceration-and-anaerobic-fermentation-in-coffee/',
+}
+
+const KOJI_BARISTA_MAG: Card['sources'][number] = {
+  title: 'Understanding the Process: Koji Fermentation',
+  author: 'Barista Magazine',
+  kind: 'practitioner',
+  url: 'https://www.baristamagazine.com/understanding-the-process-koji-fermentation/',
+}
+
+const STARTER_CULTURES: Card['sources'][number] = {
+  title:
+    'Microbiological and chemical characteristics of wet coffee fermentation inoculated with Hansiniaspora uvarum and Pichia kudriavzevii and their impact on coffee sensory quality',
+  author: 'Frontiers in Microbiology',
+  year: 2021,
+  kind: 'peer-reviewed',
+  url: 'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8371688/',
+}
+
 const REVIEWED = '2026-08-27'
 
 export const CARDS: Card[] = [
@@ -630,22 +653,147 @@ The roast defect most people never learn to name is **baked**: a roast that spen
 **Honey** is the continuum: skin off, some mucilage left on to dry. Yellow honey leaves the least and behaves close to washed; black honey leaves the most and behaves close to natural. Red sits in the middle, which is where the baseline sits.
 
 **Anaerobic** and its relatives — carbonic maceration, lactic, yeast-inoculated — ferment the cherry in a sealed vessel with the oxygen limited or removed. That suppresses the spoilage organisms and lets chosen yeasts and lactic bacteria dominate, concentrating exactly the volatile compounds that read as wine, spice and tropical fruit. Those same compounds go vinegary and astringent when over-extracted, so this is the category where restraint pays most.`,
-      deep: `The practical trap is that processing and roast level pull in opposite directions and people only adjust for one.
+      deep: `**The full map.** Every method is a position on one line — how much fermenting fruit sugar ended up in the seed — or an intervention in the microbiology that drives it.
+
+    Washed        washed · double washed (Kenya) · wet-hulled (giling basah)
+    Honey         white 80-100% removed · yellow ~25% left · red ~50% · black 75-100%
+    Natural       natural · extended / raisin
+    Ferment       anaerobic washed · anaerobic natural · carbonic maceration ·
+                  lactic · thermal shock · yeast inoculated · co-ferment · koji
+    Other         monsooned
+
+Two entries in that list are not on the line at all, and both catch people out.
+
+**Wet-hulled**, Indonesia's giling basah, hulls the parchment off at 20-40 % moisture and lets the naked bean finish drying. That is why Sumatras are physically soft, low in acid, enormous in body, and extract faster than their washed label suggests. Brew them coarser and tighter than a washed coffee, and prefer immersion — there is little acidity for a cone to separate.
+
+**Monsooned** Malabar is not a fermentation choice either: green coffee is left in monsoon air for three to four months. The beans swell, lose most of their acidity and drop 40-60 % of their density. A far less dense bean gives up solubles readily, so grind coarser; with almost no acidity to frame, a looser ratio only thins the body that is the entire point.
+
+**The practical trap** is that processing and roast level pull in opposite directions and people only adjust for one.
 
 A light-roasted natural is dense and under-developed, which says grind finer and brew hotter. It is also loaded with soluble fermentation sugars, which says the opposite. The roast lever is the stronger of the two, but ignoring the process entirely is how a light natural ends up tasting simultaneously sour and boozy — under-extracted on the seed's own acids and over-extracted on the ferment.
 
 Agitation matters more here than anywhere else. The fermentation-derived compounds sit in the most accessible fraction, so a hard pour or an aggressive stir pulls them out first and hardest. On an anaerobic, a gentler pour is worth more than any grind change you could make.
 
-Bags do not use consistent language. "Natural anaerobic" is both, and should be brewed as an anaerobic, because the sealed ferment is the dominant fact about it. "Pulped natural" is honey, not natural, despite the name. "Semi-washed" is closer to honey than to washed. When the label is unclear, taste first at the washed baseline and move toward restraint if it reads boozy.`,
+Bags do not use consistent language, and the app reads labels rather than trusting a dropdown. "Natural anaerobic" is both, and is brewed as an anaerobic natural, because the sealed ferment is the dominant fact about it. "Pulped natural" is honey, not natural, despite the name. "Semi-washed" is closer to honey than to washed. An unqualified "honey" is treated as red — the middle of the four, and the most common. When the label is unclear, taste first at the washed baseline and move toward restraint if it reads boozy.
+
+There is also no standard for the honey colours. Fermentation time and drying temperature affect the parchment colour as much as the mucilage percentage does, so one farm's red is another's black. The percentages above are the common convention, not a specification.`,
     },
     related: [
       'roast/levels',
       'extraction/solubility-order',
       'extraction/agitation',
       'sensory/astringency',
+      'roast/experimental-fermentation',
+      'roast/decaf',
     ],
     sources: [CRAFT_AND_SCIENCE, PHOENIX_PROCESS],
     confidence: 'emerging',
+    lastReviewed: REVIEWED,
+  },
+
+  {
+    id: 'roast/experimental-fermentation',
+    category: 'roast',
+    name: 'Experimental fermentation',
+    aliases: [
+      'anaerobic',
+      'carbonic maceration',
+      'lactic',
+      'thermal shock',
+      'koji',
+      'co-ferment',
+      'infused',
+      'yeast inoculated',
+      'experimental',
+      'boozy',
+      'vinegary',
+      'bubblegum',
+    ],
+    summary:
+      'Producers now steer fermentation deliberately — sealing out oxygen, flooding with CO₂, adding chosen yeasts, growing mould, or adding fruit outright. Each concentrates the compounds that over-extract first.',
+    practicalImplication:
+      'Treat these as the coolest, coarsest end of your range and taste before adjusting. If one reads vinegary, astringent or like cough syrup, you over-extracted it — tighten the ratio rather than grinding finer.',
+    body: {
+      quick:
+        'All of these push more soluble, more volatile compounds into the bean than a conventional process does. That makes them intense and it makes over-extraction both easier and uglier, so start cool and coarse and work back.',
+      standard: `The label "anaerobic" covers a family, and the differences are mechanical.
+
+**Anaerobic washed** pulps the cherry first, then seals the parchment in a tank with a valve to off-gas. Excluding oxygen starves the spoilage organisms and lets yeasts and lactic bacteria dominate, extending the usual 12-36 hours by hours or days. The fruit is already off, so there is far less sugar involved than in a sealed natural — this is the gentlest of the group and produces oddly precise notes: cinnamon, licorice, poached pear.
+
+**Anaerobic natural** seals the whole cherry and then dries it in the fruit. Both effects stack, and the result is the loud, polarising style most people mean by "anaerobic".
+
+**Carbonic maceration** is stricter still: the cherry stays intact and the oxygen is actively displaced with CO₂ rather than merely excluded, for days or weeks. Position in the tank matters — cherries at the bottom are pressed by the weight above them while those at the top ferment almost entirely inside their own skin.
+
+**Lactic** steers the population toward lactic acid bacteria, dropping the pH and turning sharp acidity round and creamy.
+
+**Thermal shock**, from Finca El Paraíso in Cauca, heats the coffee in its own juices to roughly 40-50 °C so the pores open and take up aromatic esters, then rinses it at about 10 °C so they close and lock them in. Those aromatics sit in the most accessible fraction of the bean, which is exactly why a hot, fine brew overshoots them.
+
+**Yeast inoculation** adds a chosen strain, making the ferment faster and far more repeatable — but it adds no new sugar.
+
+**Co-ferment** (also sold as "infused") does add sugar: fruit pulp, must or cacao goes into the tank. This is the one to be most careful with, and the one most likely to divide a room.
+
+**Koji** is the outlier — it needs oxygen. Aspergillus oryzae is grown on the cherry or parchment, secreting protease, which breaks proteins into amino acids and reads as body and savoury sweetness, and amylase, which converts starch into fermentable sugar for whatever ferments next.`,
+      deep: `Why the same correction works across all of them: every one of these methods increases the fraction of the bean's solubles that come out early and easily. Extraction is not a single number — it is an order, acids then sugars then the bitter and drying compounds — and these processes load the front of that order. So the failure is not "too much extraction" in general, it is that you sailed past the good part while chasing a yield figure that was calibrated on washed coffee.
+
+That is also why agitation matters more here than anywhere else, and why the fix for a hollow-tasting experimental coffee is the ratio rather than the grinder. Grinding finer raises early extraction, which is the part already overloaded. Tightening the ratio raises strength without raising yield.
+
+Two honest caveats. First, the naming is not standardised and producers use these terms loosely, sometimes for marketing — "anaerobic" on a bag may mean 18 hours in a sealed bucket or three weeks in a temperature-controlled tank. Second, co-ferments are contested on principle: some competitions and buyers treat added-substrate coffees as a different product rather than a processing method, since the flavour did not come from the coffee.
+
+Yeast inoculation has the best evidence base of the group — controlled trials with Hansiniaspora uvarum and Pichia kudriavzevii show measurable and repeatable sensory shifts. Thermal shock and koji have the least published work and the most farm-to-farm variation.`,
+    },
+    related: [
+      'roast/processing',
+      'extraction/solubility-order',
+      'extraction/agitation',
+      'sensory/astringency',
+    ],
+    sources: [ROYAL_CM, STARTER_CULTURES, KOJI_BARISTA_MAG],
+    confidence: 'emerging',
+    lastReviewed: REVIEWED,
+  },
+
+  {
+    id: 'roast/decaf',
+    category: 'roast',
+    name: 'Decaf, and why it brews differently',
+    aliases: [
+      'decaf',
+      'decaffeinated',
+      'swiss water',
+      'ethyl acetate',
+      'sugarcane process',
+      'CO2 process',
+      'flat decaf',
+    ],
+    summary:
+      'Decaffeination swells the seed and leaves it more porous and less dense, so water moves through it faster and the margin before bitterness dominates is narrower.',
+    practicalImplication:
+      'Grind about 25 µm coarser and brew 2 °C cooler than the caffeinated version of the same coffee. If your decaf tastes flat, that is usually the roast, not your grind — grinding finer into a fast-extracting bean makes it flat and astringent instead.',
+    body: {
+      quick:
+        'Decaf beans are softer, more porous and less dense than caffeinated ones, so they extract faster and have less room for error. Coarser and slightly cooler.',
+      standard: `Decaffeination is not a cherry process — it happens to green coffee, after processing and before roasting, so a decaf is still washed or natural or anything else. That is why this app treats it as a separate flag rather than a nineteenth processing method: "washed decaf" has to be sayable.
+
+Whichever method is used, the solvent has to get into the bean and the caffeine has to get out, which means swelling the seed with water and moving compounds across its cell walls. The bean that comes out is physically different: more porous, less dense, and mechanically softer.
+
+The three methods worth knowing:
+
+| Method | How | Cup |
+| --- | --- | --- |
+| Swiss Water | Water plus a carbon filter that catches caffeine and returns the rest | Clean, retains origin character well |
+| Sugarcane / EA | Ethyl acetate, derived from sugarcane fermentation | Caramel, vanilla, red fruit, soft acidity, velvety |
+| CO₂ | Supercritical CO₂ dissolves caffeine selectively | Highest varietal clarity — Ethiopian berries stay berries |
+
+"Chemical-free" marketing is mostly noise: ethyl acetate occurs naturally in fruit, and CO₂ and water are both chemicals. What matters more is how carefully the roaster handled a bean that browns faster and reads darker at the same colour measurement.`,
+      deep: `There is a real disagreement here and it is worth naming. Some guides tell you to grind decaf **finer**, on the grounds that decaf tastes flat and finer means more extraction.
+
+Flat decaf is usually a roasting problem, not a brewing one. Decaffeinated green coffee is already partly browned before it enters the roaster, conducts heat differently, and reaches a given colour earlier — so a profile designed for caffeinated coffee applied unchanged to decaf produces a cup that is simultaneously baked and underdeveloped. Grinding finer into a bean that already extracts fast does not fix that; it adds astringency to flatness.
+
+The structural argument runs the other way and this app follows it: more porous plus less dense plus mechanically softer means faster extraction and more fines from the same grinder setting, so pull back rather than push. If a decaf tastes hollow after that, tighten the ratio — more coffee per litre raises strength without raising yield — or buy from a roaster with a dedicated decaf profile.`,
+    },
+    related: ['roast/processing', 'roast/levels', 'extraction/strength-vs-yield'],
+    sources: [CRAFT_AND_SCIENCE],
+    confidence: 'contested',
     lastReviewed: REVIEWED,
   },
 

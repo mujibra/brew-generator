@@ -10,7 +10,13 @@ import { baselineFor, emptyGear, grinderOf } from '@/lib/gear/store'
 import { GRINDERS } from '@/lib/grinders/registry'
 import { BREWER_LIST, type BrewerId } from '@/lib/recipes/brewers'
 import { type BrewGoal, GOALS, generateRecipe, toRunnable } from '@/lib/recipes/generate'
-import { PROCESSES, type ProcessId } from '@/lib/recipes/process'
+import {
+  PROCESSES_BY_FAMILY,
+  PROCESS_BY_ID,
+  PROCESS_FAMILIES,
+  type ProcessFamilyId,
+  type ProcessId,
+} from '@/lib/recipes/process'
 import { beanToGenerateInput, summariseShelf } from '@/lib/shelf/bean'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -53,6 +59,10 @@ export function RecipeBuilder() {
   const [iced, setIced] = useState(false)
   const [icePct, setIcePct] = useState<number | null>(null)
   const [processId, setProcessId] = useState<ProcessId | ''>('')
+  const [decaf, setDecaf] = useState(false)
+  // The family is derived from the choice, so picking a bag lands on the right
+  // family without a second piece of state to keep in sync.
+  const family: ProcessFamilyId | '' = processId === '' ? '' : PROCESS_BY_ID[processId].family
 
   const brewer = BREWER_LIST.find((b) => b.id === brewerId)!
   const isImmersion = brewer.mode === 'immersion'
@@ -84,6 +94,7 @@ export function RecipeBuilder() {
     setAltitude(fromBean.altitudeMasl !== undefined ? String(fromBean.altitudeMasl) : '')
     setDaysOffRoast(fromBean.daysOffRoast !== undefined ? String(fromBean.daysOffRoast) : '')
     setProcessId(fromBean.processId ?? '')
+    setDecaf(Boolean(fromBean.decaf))
   }, [selectedBean])
 
   const result = useMemo(() => {
@@ -100,6 +111,7 @@ export function RecipeBuilder() {
         ...(iced ? { iced: true } : {}),
         ...(iced && icePct !== null ? { iceFractionOverride: icePct / 100 } : {}),
         ...(processId === '' ? {} : { processId }),
+        ...(decaf ? { decaf: true } : {}),
         ...(gear?.myWater ? { water: gear.myWater } : {}),
         ...(grinderId === '' ? {} : { grinderId }),
         ...(baseline === undefined ? {} : { baselineSetting: baseline }),
@@ -128,6 +140,7 @@ export function RecipeBuilder() {
     iced,
     icePct,
     processId,
+    decaf,
     gear?.myWater,
   ])
 
@@ -227,22 +240,68 @@ export function RecipeBuilder() {
         </Step>
 
         <Step n={4} title="Processing">
-          <div role="radiogroup" aria-label="Processing method" className="flex flex-wrap gap-2">
+          <div role="radiogroup" aria-label="Processing family" className="flex flex-wrap gap-2">
             <Pill selected={processId === ''} onSelect={() => setProcessId('')} label="Not sure" />
-            {PROCESSES.map((p) => (
+            {PROCESS_FAMILIES.map((fam) => (
               <Pill
-                key={p.id}
-                selected={processId === p.id}
-                onSelect={() => setProcessId(p.id)}
-                label={p.label}
+                key={fam.id}
+                selected={family === fam.id}
+                // Choosing a family lands on its first variant, which is the
+                // most common one. The row below then narrows it.
+                onSelect={() => setProcessId(PROCESSES_BY_FAMILY(fam.id)[0]!.id)}
+                label={fam.label}
               />
             ))}
           </div>
+
+          {family !== '' && PROCESSES_BY_FAMILY(family).length > 1 && (
+            <div
+              role="radiogroup"
+              aria-label="Processing variant"
+              className="compact mt-3 flex flex-wrap gap-2 rounded-lg bg-[var(--color-raised)] p-3"
+            >
+              {PROCESSES_BY_FAMILY(family).map((p) => (
+                <Pill
+                  key={p.id}
+                  selected={processId === p.id}
+                  onSelect={() => setProcessId(p.id)}
+                  label={p.label}
+                />
+              ))}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setDecaf(!decaf)}
+            aria-pressed={decaf}
+            className={`mt-3 w-full rounded-lg px-4 py-3 text-left transition-all duration-200 ${
+              decaf
+                ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+                : 'bg-[var(--color-surface)] hover:bg-[var(--color-raised)]'
+            }`}
+          >
+            <span className="block font-bold tracking-tight">Decaffeinated</span>
+            <span
+              className={`mt-1 block text-sm leading-snug ${decaf ? '' : 'text-[var(--color-muted)]'}`}
+            >
+              {decaf
+                ? 'Coarser and cooler: a more porous bean extracts faster and has less margin.'
+                : 'Not a process — a decaf can be washed or natural. It changes the bean structure.'}
+            </span>
+          </button>
+
           <Hint>
             {processId === ''
-              ? 'How the fruit was taken off the seed. It decides how much fermentation sugar the bean carries, which is the second-biggest lever after roast level. Pick a bag below and this fills itself in.'
-              : PROCESSES.find((p) => p.id === processId)?.blurb}
+              ? 'How the fruit was taken off the seed. It decides how much fermentation sugar the bean carries, which is the second-biggest lever after roast level. Pick a bag below and this fills itself in from the label.'
+              : PROCESS_BY_ID[processId].blurb}
           </Hint>
+          <Link
+            href="/learn/roast/processing/"
+            className="mt-2 block text-sm text-[var(--color-accent)]"
+          >
+            All eighteen methods, and what each does to the brew →
+          </Link>
         </Step>
 
         <Step n={5} title="The bean">

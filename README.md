@@ -138,7 +138,7 @@ Working:
   drawdown from its time, and showing the grind move in absolute terms
   (47 → 44 clicks). Remembers what you have already tried.
 - **/gear** — your grinder and your own baseline setting per brewer.
-- **/learn** — 20 knowledge cards on extraction, grind, roast, water and tasting,
+- **/learn** — 22 knowledge cards on extraction, grind, roast, water and tasting,
   searchable by symptom ("flat", "drying") rather than by jargon. Each has a
   Quick / Standard / Deep depth toggle, sources, and a confidence label.
 - **/journal** — every logged brew records the dripper it was made on and what
@@ -155,7 +155,7 @@ Working:
 The app is an installable PWA and works fully offline: every route and asset is
 precached at build time.
 
-Built and tested with no UI yet: recipe scaling. 336 tests.
+Built and tested with no UI yet: recipe scaling. 347 tests.
 
 Not built: a tools index (F9), saving a generated recipe to a library (F2.2),
 onboarding (13.3), an app-wide depth setting (13.2), cupping (F8), the rest of
@@ -251,11 +251,40 @@ nothing downstream read — it did not even save them. The grinder registry knew
 burr geometry and the grind advice did not.
 
 **Processing** is the second-biggest lever after roast level and it pulls the
-opposite way. A natural is brewed 3 °C cooler and 30 µm coarser than a washed
-of the same roast, because fermentation-derived sugars dissolve early and
-readily and pushing them turns fruit into ferment. `processFromText` reads what
-the bag actually says — "Natural Anaerobic" is brewed as an anaerobic, "pulped
-natural" is honey despite the name.
+opposite way: fermentation-derived sugars dissolve early and readily, and
+pushing them turns fruit into ferment. Eighteen methods in five families, in
+`lib/recipes/process.ts`:
+
+| Family | Methods |
+| --- | --- |
+| Washed | washed · double washed (Kenya) · wet-hulled (giling basah) |
+| Honey | white · yellow · red · black, by mucilage retained |
+| Natural | natural · extended / raisin |
+| Ferment | anaerobic washed · anaerobic natural · carbonic maceration · lactic · thermal shock · yeast inoculated · co-ferment · koji |
+| Other | monsooned |
+
+Two of those are not on the washed-to-natural line at all. **Wet-hulled** hulls
+the parchment at 20–40 % moisture and finishes drying the naked bean, which is
+why Sumatras are soft, low in acid and extract faster than the washed label
+suggests — coarser and tighter, and they reward immersion. **Monsooned** loses
+40–60 % of its density to four months of monsoon air, so it grinds coarser and
+gets a tighter ratio, because a looser one would thin the only thing it has.
+
+The picker is families first, then variants, because eighteen flat options is
+not a picker. **Decaf is a separate flag, not a nineteenth method** — a decaf
+can be washed or natural, and modelling it as a process would have made "washed
+decaf" unrepresentable. It grinds 25 µm coarser and brews 2 °C cooler: swelling
+the seed to get the caffeine out leaves it porous and less dense. Some guides
+say grind finer because decaf tastes flat; flat is usually a roast profile
+applied without adjusting for the bean, and the Learn card says the
+disagreement exists rather than picking a side silently.
+
+`processFromText` reads what the bag actually says, most-specific-first, because
+producers are not consistent. "Thermal Shock Natural" is thermal shock;
+"Anaerobic washed" and "Natural Anaerobic" are different brews; "pulped natural"
+is honey despite the name; an unqualified "honey" resolves to red. Ids saved
+before the taxonomy had families still resolve — `anaerobic` maps to
+`anaerobicNatural`, `honey` to `honeyYellow`.
 
 **Water** does two unrelated things. Hardness is part of the extraction
 mechanism — Mg²⁺ binds coffee's malic, lactic and citric acids more strongly

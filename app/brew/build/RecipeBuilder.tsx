@@ -503,6 +503,29 @@ export function RecipeBuilder() {
             ))}
 
             <h3 className="mt-8 text-xs font-medium uppercase tracking-widest text-[var(--color-muted)]">
+              Before you start
+            </h3>
+
+            <ol className="mt-3 space-y-2">
+              {result.recipe.prep.map((step, i) => (
+                <li
+                  key={step.label}
+                  className="flex gap-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3"
+                >
+                  <span className="w-12 shrink-0 font-mono text-sm tabular-nums text-[var(--color-faint)]">
+                    {i + 1}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium">{step.label}</span>
+                    <span className="mt-1 block text-sm text-[var(--color-muted)]">
+                      {step.instruction}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+
+            <h3 className="mt-8 text-xs font-medium uppercase tracking-widest text-[var(--color-muted)]">
               Pour schedule · total {formatElapsed(result.compiled.totalS * 1000)}
             </h3>
 

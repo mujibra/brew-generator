@@ -50,6 +50,7 @@ export function RecipeBuilder() {
   const [pourOverride, setPourOverride] = useState<{ a: number; b: number } | null>(null)
   const [ratioOverride, setRatioOverride] = useState<number | null>(null)
   const [iced, setIced] = useState(false)
+  const [icePct, setIcePct] = useState<number | null>(null)
 
   const brewer = BREWER_LIST.find((b) => b.id === brewerId)!
   const isImmersion = brewer.mode === 'immersion'
@@ -94,6 +95,7 @@ export function RecipeBuilder() {
         ...(daysOffRoast === '' ? {} : { daysOffRoast: Number(daysOffRoast) }),
         ...(ratioOverride === null ? {} : { ratioOverride }),
         ...(iced ? { iced: true } : {}),
+        ...(iced && icePct !== null ? { iceFractionOverride: icePct / 100 } : {}),
         ...(grinderId === '' ? {} : { grinderId }),
         ...(baseline === undefined ? {} : { baselineSetting: baseline }),
         ...(pourOverride ? { poursOverride: pourOverride } : {}),
@@ -119,6 +121,7 @@ export function RecipeBuilder() {
     pourOverride,
     ratioOverride,
     iced,
+    icePct,
   ])
 
   const plan = result?.recipe.pourPlan
@@ -298,6 +301,39 @@ export function RecipeBuilder() {
                   : 'Brew hot straight onto ice. Chills in seconds and keeps the aromatics a slow cool-down loses.'}
               </span>
             </button>
+            {iced && (
+              <div className="mt-3 rounded-xl border border-[var(--color-line)] p-4">
+                <Stepper
+                  label="Ice"
+                  unit="%"
+                  value={icePct ?? Math.round((result?.recipe.ice.fraction ?? 0.4) * 100)}
+                  min={25}
+                  max={60}
+                  step={5}
+                  onChange={setIcePct}
+                  hint={
+                    result?.recipe.iced
+                      ? `The bed sees 1:${result.recipe.ice.hotRatio} — that is where the extraction happens, even though the drink lands at 1:${result.recipe.ratio}. More ice chills harder and brews a stronger concentrate.`
+                      : 'Share of the water sitting in the carafe as ice.'
+                  }
+                />
+                {icePct !== null && icePct !== 40 && (
+                  <button
+                    type="button"
+                    onClick={() => setIcePct(null)}
+                    className="compact mt-2 rounded-full border border-[var(--color-line)] px-3 text-sm text-[var(--color-muted)]"
+                  >
+                    Back to 40 %
+                  </button>
+                )}
+                <Link
+                  href="/learn/extraction/flash-brew/"
+                  className="mt-3 block text-sm text-[var(--color-accent)]"
+                >
+                  How flash brew works, and the two ratios →
+                </Link>
+              </div>
+            )}
             <Divider />
             <NumberField
               label="Altitude"
@@ -445,7 +481,8 @@ export function RecipeBuilder() {
                 </p>
                 <p className="mt-2 text-sm text-[var(--color-muted)]">
                   The ice is part of the {result.recipe.waterG} g, not extra — so it finishes at
-                  full strength rather than watered down.
+                  full strength rather than watered down. The bed brews at 1:
+                  {result.recipe.ice.hotRatio}, the drink lands at 1:{result.recipe.ratio}.
                 </p>
               </div>
             )}

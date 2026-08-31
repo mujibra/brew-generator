@@ -375,15 +375,44 @@ describe('Japanese iced', () => {
   it('is off by default, and adds nothing when off', () => {
     const hot = gen()
     expect(hot.iced).toBe(false)
-    expect(hot.ice).toEqual({ iceG: 0, hotWaterG: hot.waterG })
+    expect(hot.ice).toEqual({ iceG: 0, hotWaterG: hot.waterG, fraction: 0, hotRatio: hot.ratio })
     expect(hot.rationale.some((s) => s.heading === 'Ice')).toBe(false)
   })
 
-  it('refuses on a French press, and says why, instead of pretending', () => {
+  it('works on a French press by decanting onto ice rather than dripping', () => {
     const r = iced({ brewerId: 'frenchPress', doseG: 30 })
-    expect(r.iced).toBe(false)
-    expect(r.ice.iceG).toBe(0)
-    expect(r.warnings.join(' ')).toMatch(/cannot drip onto ice/i)
+    expect(r.iced).toBe(true)
+    expect(r.ice.iceG).toBeGreaterThan(0)
+    const serve = r.steps.find((s) => s.kind === 'serve')
+    expect(serve?.instruction).toMatch(/decant/i)
+    // The sediment rule still applies — iced must not throw it away.
+    expect(serve?.instruction).toMatch(/last centimetre/i)
+  })
+
+  it('brews hotter than the same recipe hot, because the bed gets less water', () => {
+    expect(iced({ roastLevel: 'medium' }).waterTempC).toBeGreaterThan(
+      gen({ roastLevel: 'medium' }).waterTempC,
+    )
+  })
+
+  it('never lets the bloom eat the scarce hot water', () => {
+    const r = iced({ daysOffRoast: 2, iceFractionOverride: 0.6 })
+    expect(r.pours[0]!.toG / r.ice.hotWaterG).toBeLessThanOrEqual(0.25)
+  })
+
+  it('reports what the bed sees, not just what the drink lands at', () => {
+    const r = iced()
+    expect(r.ice.hotRatio).toBeCloseTo(r.ice.hotWaterG / r.doseG, 1)
+    expect(r.ice.hotRatio).toBeLessThan(r.ratio)
+    expect(r.ice.fraction).toBeCloseTo(0.4, 2)
+  })
+
+  it('says cubes, not crushed — crushed melts before the brew lands', () => {
+    expect(
+      iced()
+        .prep.map((p) => p.instruction)
+        .join(' '),
+    ).toMatch(/not crushed/i)
   })
 
   it('works on the AeroPress, which presses onto ice', () => {
@@ -421,5 +450,47 @@ describe('manual ratio', () => {
     const r = gen({ iced: true, ratioOverride: 18 })
     expect(r.waterG).toBe(360)
     expect(r.ice.iceG + r.ice.hotWaterG).toBe(360)
+  })
+})
+
+describe('manual ice fraction', () => {
+  const iced = (over: Partial<GenerateInput> = {}) => gen({ iced: true, ...over })
+
+  it('moves the split without moving the total', () => {
+    const half = iced({ iceFractionOverride: 0.5 })
+    expect(half.waterG).toBe(iced().waterG)
+    expect(half.ice.iceG).toBe(160) // half of 320
+    expect(half.ice.hotWaterG).toBe(160)
+    expect(half.ice.fraction).toBeCloseTo(0.5, 2)
+  })
+
+  it('covers published practice from a third to a half', () => {
+    expect(iced({ iceFractionOverride: 0.33 }).ice.fraction).toBeCloseTo(0.33, 2)
+    expect(iced({ iceFractionOverride: 0.5 }).ice.fraction).toBeCloseTo(0.5, 2)
+  })
+
+  it('clamps rather than letting the bed run dry or the ice do nothing', () => {
+    expect(iced({ iceFractionOverride: 0.95 }).ice.fraction).toBeCloseTo(0.6, 2)
+    expect(iced({ iceFractionOverride: 0.05 }).ice.fraction).toBeCloseTo(0.25, 2)
+  })
+
+  it('still pours only the hot side at any fraction', () => {
+    for (const f of [0.25, 0.4, 0.5, 0.6]) {
+      const r = iced({ iceFractionOverride: f })
+      expect(r.pours.at(-1)?.toG, String(f)).toBe(r.ice.hotWaterG)
+      expect(r.ice.iceG + r.ice.hotWaterG, String(f)).toBe(r.waterG)
+    }
+  })
+
+  it('warns when so much water is ice that the bed is starved', () => {
+    const starved = iced({ iceFractionOverride: 0.6, ratioOverride: 12 })
+    expect(starved.ice.hotRatio).toBeLessThan(8)
+    expect(starved.warnings.join(' ')).toMatch(/the bed only sees/i)
+    expect(iced().warnings).toEqual([])
+  })
+
+  it('is ignored when the brew is not iced', () => {
+    const r = gen({ iceFractionOverride: 0.5 })
+    expect(r.ice).toEqual({ iceG: 0, hotWaterG: r.waterG, fraction: 0, hotRatio: r.ratio })
   })
 })

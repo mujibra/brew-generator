@@ -101,7 +101,7 @@ Working:
   drawdown from its time, and showing the grind move in absolute terms
   (47 → 44 clicks). Remembers what you have already tried.
 - **/gear** — your grinder and your own baseline setting per brewer.
-- **/learn** — 18 knowledge cards on extraction, grind, roast, water and tasting,
+- **/learn** — 19 knowledge cards on extraction, grind, roast, water and tasting,
   searchable by symptom ("flat", "drying") rather than by jargon. Each has a
   Quick / Standard / Deep depth toggle, sources, and a confidence label.
 - **/journal** — every logged brew records the dripper it was made on and what
@@ -118,7 +118,7 @@ Working:
 The app is an installable PWA and works fully offline: every route and asset is
 precached at build time.
 
-Built and tested with no UI yet: recipe scaling. 310 tests.
+Built and tested with no UI yet: recipe scaling. 320 tests.
 
 Not built: a tools index (F9), saving a generated recipe to a library (F2.2),
 onboarding (13.3), an app-wide depth setting (13.2), cupping (F8), the rest of
@@ -198,11 +198,21 @@ the pour split. Brewer characteristics in `lib/recipes/brewers.ts` cap what the
 bed will tolerate.
 
 The goal's ratio is a default, not a lock — a manual override moves only the
-water, because ratio is strength and grind is extraction. Japanese iced takes
-40 % of the declared water out as ice in the carafe rather than adding ice
-afterwards, so the drink lands at full strength, and grinds 30 µm finer since
-less hot water through the bed means less contact time. It is refused on a
-French press, which cannot drip.
+water, because ratio is strength and grind is extraction.
+
+Japanese iced has two ratios and conflating them is the usual mistake. The
+declared total is dose against all the water, ice included — the strength you
+taste. The bed sees dose against the hot water only, and that is where the
+extraction happens; the default 40 % ice puts it at 1:9.5, which is Kasuya's
+iced 4:6 described from the other side. The ice share is adjustable from 25 %
+to 60 %, covering published practice from a third to a half, and the generator
+warns below roughly 1:8 on the bed, where the bloom and the water the grounds
+retain leave too little to extract with. Iced also grinds 30 µm finer and
+brews 2 °C hotter for the short contact time, caps the bloom at a quarter of
+the hot water, and on a French press decants onto the ice instead of dripping.
+
+The reasoning lives in `lib/learn/cards.ts` under `extraction/flash-brew`, and
+the builder links to it.
 
 Grind advice always prefers an offset from the user's own baseline setting over
 an absolute micron figure, because cross-grinder micron claims are not reliable

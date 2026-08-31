@@ -55,6 +55,22 @@ const LOCKHART: Card['sources'][number] = {
   kind: 'industry-standard',
 }
 
+const KASUYA: Card['sources'][number] = {
+  title: 'Ice brew and the iced 4:6 method',
+  author: 'Tetsu Kasuya (2016 World Brewers Cup champion)',
+  kind: 'practitioner',
+  url: 'https://kurasu.kyoto/blogs/kurasu-journal/tetsu-kasuya-ice-brew-coffee-english',
+}
+
+const COLD_VS_HOT: Card['sources'][number] = {
+  title:
+    'Comparison of Characterization of Cold Brew and Hot Brew Coffee Prepared at Various Roasting Degrees',
+  author: 'Pan et al., Journal of Food Processing and Preservation',
+  year: 2023,
+  kind: 'peer-reviewed',
+  url: 'https://onlinelibrary.wiley.com/doi/10.1155/2023/3175570',
+}
+
 const REVIEWED = '2026-08-27'
 
 export const CARDS: Card[] = [
@@ -229,7 +245,12 @@ Altitude matters too: water boils lower as you go up, so at 1,500 m your "boilin
 
 The common myth worth naming: that boiling water "burns" coffee. It does not — there is no combustion. It over-extracts, which is a different problem with a different fix.`,
     },
-    related: ['roast/levels', 'extraction/solubility-order', 'extraction/grind-size'],
+    related: [
+      'roast/levels',
+      'extraction/solubility-order',
+      'extraction/grind-size',
+      'extraction/flash-brew',
+    ],
     sources: [RAO, CRAFT_AND_SCIENCE],
     confidence: 'established',
     lastReviewed: REVIEWED,
@@ -318,6 +339,57 @@ It also changes what a "grind too fine" error costs. On a cone, too fine means a
     },
     related: ['extraction/filter-media', 'extraction/channelling', 'extraction/agitation'],
     sources: [CRAFT_AND_SCIENCE, RAO],
+    confidence: 'established',
+    lastReviewed: REVIEWED,
+  },
+
+  {
+    id: 'extraction/flash-brew',
+    category: 'extraction',
+    name: 'Flash brew and iced coffee',
+    aliases: [
+      'japanese iced',
+      'japanese iced coffee',
+      'flash brew',
+      'iced pour over',
+      'cold brew',
+      'iced',
+      'over ice',
+      'watery iced coffee',
+    ],
+    summary:
+      'Flash brew replaces part of the brew water with ice in the carafe and brews hot straight onto it. The drink lands at full strength and keeps the aromatics that a slow cool-down or a cold steep never delivers.',
+    practicalImplication:
+      'Never pour finished coffee over ice — that is dilution, not a recipe. Put 33-50 % of the water in the carafe as ice, brew the rest hot, and check the ratio the bed actually sees before you blame the grind.',
+    body: {
+      quick:
+        'Ice in the carafe, hot brew on top. The ice is part of the recipe water rather than an addition to it, so melting it finishes the drink instead of watering it down. Grind finer and brew hotter than the same recipe hot.',
+      standard: `There are two numbers in an iced brew and confusing them is the whole problem. The drink ratio is dose against ALL the water, ice included — that is the strength you taste. The brew ratio is dose against the hot water only — that is what the coffee bed actually extracts at.
+
+At 20 g, 320 g total and 40 % ice, the drink is 1:16 and the bed is 1:9.5. Kasuya quotes his iced 4:6 as 1:10, which is the same brew described from the bed's side.
+
+Published splits run from a third ice to a half. More ice chills harder and brews a tighter concentrate; less ice is gentler on the bed but risks not melting away, which leaves the drink stronger than the recipe claims. Below roughly 1:8 on the bed the method breaks down — the bloom and the water the grounds retain eat too much of what little there is, and the cup comes out thin and sour no matter how fine you grind.
+
+Two compensations follow from the short contact time: grind finer than you would hot, and brew hotter (93-96 C is the published band). Use solid cubes, not crushed. Crushed ice melts before the brew lands and dilutes the early, strongest fractions.`,
+      deep: `Why not just cold brew? Because cold water is selective. Hot-brewed coffee carries measurably more volatile aroma compounds than cold brew of the same coffee, and extracts more of the acids that read as fruit and sweetness rather than as sourness. Cold brew's smoothness is partly the absence of those compounds. Flash brew extracts hot, then chills in seconds, so the volatiles are trapped in a cold liquid instead of leaving with the steam of a slow cool-down.
+
+Cold also mutes perception. The same liquid tastes less sweet and lighter-bodied cold than warm, which is why practitioners often brew iced a point or two tighter than they would hot. Fix that with ratio, not grind — grind moves extraction and will take you sour or bitter, ratio moves strength.
+
+Related methods worth not confusing with this one:
+
+- **Ice-on-bed (Kasuya's "ice brew")** — ice sits on the grounds and cold water is poured over it, extracting as it melts. Sweet and delicate, and openly low in reproducibility.
+- **Kyoto / slow drip** — cold water dripped through the bed over hours. Its own drink, not a fast substitute.
+- **Immersion iced** — brew hot in a press or AeroPress, then decant onto the weighed ice. Same arithmetic, no dripping required.
+
+If ice is still floating when the drawdown ends, swirl until it goes. Serving over fresh ice in the glass is a second dilution and the recipe does not account for it.`,
+    },
+    related: [
+      'extraction/temperature',
+      'extraction/strength-vs-yield',
+      'extraction/percolation-vs-immersion',
+      'sensory/sour-vs-bitter',
+    ],
+    sources: [COLD_VS_HOT, KASUYA, CRAFT_AND_SCIENCE],
     confidence: 'established',
     lastReviewed: REVIEWED,
   },

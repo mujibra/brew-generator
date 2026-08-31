@@ -140,6 +140,14 @@ export type SettingsRecord = Entity & {
   /** The user's own grind setting per brewer id. PRD F6 R3 — the reliable path. */
   baselines?: Record<string, number>
   typicalDoseG?: number
+  /**
+   * The water the user actually brews with. Hardness drives extraction and
+   * alkalinity mutes acidity, so the recipe generator reads this.
+   *
+   * ponytail: two numbers on settings rather than the waterProfiles collection,
+   * which nothing writes to. Promote it when someone needs more than one.
+   */
+  myWater?: { ghPpmCaCO3: number; khPpmCaCO3: number }
   /** A dial-in suggestion the user said they would try, awaiting a verdict. */
   pendingHypothesis?: {
     id: string

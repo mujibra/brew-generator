@@ -10,6 +10,7 @@ import { baselineFor, emptyGear, grinderOf } from '@/lib/gear/store'
 import { GRINDERS } from '@/lib/grinders/registry'
 import { BREWER_LIST, type BrewerId } from '@/lib/recipes/brewers'
 import { type BrewGoal, GOALS, generateRecipe, toRunnable } from '@/lib/recipes/generate'
+import { PROCESSES, type ProcessId } from '@/lib/recipes/process'
 import { beanToGenerateInput, summariseShelf } from '@/lib/shelf/bean'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -51,6 +52,7 @@ export function RecipeBuilder() {
   const [ratioOverride, setRatioOverride] = useState<number | null>(null)
   const [iced, setIced] = useState(false)
   const [icePct, setIcePct] = useState<number | null>(null)
+  const [processId, setProcessId] = useState<ProcessId | ''>('')
 
   const brewer = BREWER_LIST.find((b) => b.id === brewerId)!
   const isImmersion = brewer.mode === 'immersion'
@@ -81,6 +83,7 @@ export function RecipeBuilder() {
     if (fromBean.roastLevel) setRoastLevel(fromBean.roastLevel)
     setAltitude(fromBean.altitudeMasl !== undefined ? String(fromBean.altitudeMasl) : '')
     setDaysOffRoast(fromBean.daysOffRoast !== undefined ? String(fromBean.daysOffRoast) : '')
+    setProcessId(fromBean.processId ?? '')
   }, [selectedBean])
 
   const result = useMemo(() => {
@@ -96,6 +99,8 @@ export function RecipeBuilder() {
         ...(ratioOverride === null ? {} : { ratioOverride }),
         ...(iced ? { iced: true } : {}),
         ...(iced && icePct !== null ? { iceFractionOverride: icePct / 100 } : {}),
+        ...(processId === '' ? {} : { processId }),
+        ...(gear?.myWater ? { water: gear.myWater } : {}),
         ...(grinderId === '' ? {} : { grinderId }),
         ...(baseline === undefined ? {} : { baselineSetting: baseline }),
         ...(pourOverride ? { poursOverride: pourOverride } : {}),
@@ -122,6 +127,8 @@ export function RecipeBuilder() {
     ratioOverride,
     iced,
     icePct,
+    processId,
+    gear?.myWater,
   ])
 
   const plan = result?.recipe.pourPlan
@@ -199,7 +206,7 @@ export function RecipeBuilder() {
               />
             ))}
           </Grid>
-          <Hint>Changing this resets the suggested pour count in step 6.</Hint>
+          <Hint>Changing this resets the suggested pour count in step 7.</Hint>
         </Step>
 
         <Step n={3} title="Roast level">
@@ -219,7 +226,26 @@ export function RecipeBuilder() {
           </Hint>
         </Step>
 
-        <Step n={4} title="The bean">
+        <Step n={4} title="Processing">
+          <div role="radiogroup" aria-label="Processing method" className="flex flex-wrap gap-2">
+            <Pill selected={processId === ''} onSelect={() => setProcessId('')} label="Not sure" />
+            {PROCESSES.map((p) => (
+              <Pill
+                key={p.id}
+                selected={processId === p.id}
+                onSelect={() => setProcessId(p.id)}
+                label={p.label}
+              />
+            ))}
+          </div>
+          <Hint>
+            {processId === ''
+              ? 'How the fruit was taken off the seed. It decides how much fermentation sugar the bean carries, which is the second-biggest lever after roast level. Pick a bag below and this fills itself in.'
+              : PROCESSES.find((p) => p.id === processId)?.blurb}
+          </Hint>
+        </Step>
+
+        <Step n={5} title="The bean">
           {beans.length > 0 && (
             <div className="mb-3 rounded-lg bg-[var(--color-surface)] p-4">
               <label htmlFor="bean" className="text-sm">
@@ -353,7 +379,7 @@ export function RecipeBuilder() {
           </div>
         </Step>
 
-        <Step n={5} title="Grinder">
+        <Step n={6} title="Grinder">
           {grinder ? (
             <div className="rounded-lg bg-[var(--color-surface)] p-4">
               <div className="flex items-baseline justify-between gap-3">
@@ -390,7 +416,7 @@ export function RecipeBuilder() {
         </Step>
 
         {!isImmersion && (
-          <Step n={6} title="How many pours?">
+          <Step n={7} title="How many pours?">
             <div className="rounded-lg bg-[var(--color-surface)] p-4">
               <Stepper
                 label="First 40 % of the water"
@@ -453,7 +479,7 @@ export function RecipeBuilder() {
         )}
 
         {isImmersion && (
-          <Step n={6} title="Pours">
+          <Step n={7} title="Pours">
             <p className="rounded-lg bg-[var(--color-surface)] p-4 text-[var(--color-muted)]">
               {brewer.name} is full immersion — one pour, then the steep does the work. Pour count
               is not a lever here.

@@ -1,6 +1,7 @@
 'use client'
 
-import { PageBody, PageHeader } from '@/app/components/ui'
+import { Button, PageBody, PageHeader } from '@/app/components/ui'
+import { repository } from '@/lib/db/dexie'
 
 import {
   SALT_CONTRIBUTION,
@@ -12,7 +13,7 @@ import {
   dosesForTarget,
   profileWarnings,
 } from '@/lib/calc/water'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 /**
  * Water Lab — PRD F7.
@@ -409,6 +410,13 @@ function Diagnose() {
   const [gh, setGh] = useState('')
   const [kh, setKh] = useState('')
   const [tds, setTds] = useState('')
+  const [saved, setSaved] = useState<{ ghPpmCaCO3: number; khPpmCaCO3: number } | null>(null)
+
+  useEffect(() => {
+    repository()
+      .settings.get('gear')
+      .then((g) => setSaved(g?.myWater ?? null))
+  }, [])
 
   const profile = useMemo(() => {
     const g = Number(gh)
@@ -424,6 +432,22 @@ function Diagnose() {
   }, [gh, kh, tds])
 
   const warnings = profile ? profileWarnings(profile) : []
+
+  const isCurrent =
+    Boolean(profile && saved) &&
+    Math.round(saved!.ghPpmCaCO3) === Math.round(profile!.ghPpmCaCO3) &&
+    Math.round(saved!.khPpmCaCO3) === Math.round(profile!.khPpmCaCO3)
+
+  async function save() {
+    if (!profile) return
+    const next = {
+      ghPpmCaCO3: profile.ghPpmCaCO3,
+      khPpmCaCO3: profile.khPpmCaCO3,
+    }
+    const current = (await repository().settings.get('gear')) ?? { id: 'gear' as const }
+    await repository().settings.put({ ...current, myWater: next, updatedAt: Date.now() })
+    setSaved(next)
+  }
 
   return (
     <div className="mt-6">
@@ -460,6 +484,36 @@ function Diagnose() {
               </p>
             </div>
           )}
+          {/*
+            Until now this surface was a calculator that told nothing else what
+            it had worked out. Saving it is what lets the recipe generator move
+            the grind for water that extracts harder or softer than reference.
+          */}
+          <div className="mt-4 rounded-lg bg-[var(--color-surface)] p-4">
+            <p className="text-sm font-medium">Use this everywhere</p>
+            <p className="mt-1 text-sm text-[var(--color-muted)]">
+              Save it and every recipe you build adjusts its grind for water that extracts harder or
+              softer than the SCA reference, and warns you when alkalinity is flattening the cup.
+            </p>
+            <Button
+              variant={isCurrent ? 'secondary' : 'primary'}
+              className="mt-3 py-3"
+              onClick={save}
+              disabled={isCurrent}
+            >
+              {isCurrent
+                ? 'Saved as your water'
+                : saved
+                  ? 'Replace your saved water'
+                  : 'Save as my water'}
+            </Button>
+            {saved && !isCurrent && (
+              <p className="mt-2 text-sm text-[var(--color-faint)]">
+                Currently saved: {Math.round(saved.ghPpmCaCO3)} ppm GH ·{' '}
+                {Math.round(saved.khPpmCaCO3)} ppm KH
+              </p>
+            )}
+          </div>
         </>
       ) : (
         <p className="mt-6 text-sm text-[var(--color-faint)]">

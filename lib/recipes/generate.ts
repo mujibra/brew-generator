@@ -18,6 +18,8 @@ import type { RoastLevel } from '@/lib/calc/freshness'
 import { type GrindAdvice, type Grinder, grindAdvice, grinderById } from '@/lib/grinders/registry'
 import { BREWERS, type Brewer, type BrewerId } from './brewers'
 import type { BuiltinRecipe } from './builtin'
+import { PROCESS_BY_ID, type ProcessId, type ProcessMethod } from './process'
+import { type BrewWater, type WaterAdvice, waterAdvice } from './water'
 
 export type BrewGoal = 'sweetness' | 'acidity' | 'body' | 'clarity' | 'balance'
 
@@ -37,6 +39,10 @@ export type GenerateInput = {
   /** Growing altitude of the bean, metres above sea level. A density proxy. */
   altitudeMasl?: number
   daysOffRoast?: number
+  /** How the cherry was processed. The bag says it; the shelf stores it. */
+  processId?: ProcessId
+  /** The user's brewing water. Hardness drives extraction, alkalinity mutes it. */
+  water?: BrewWater
   grinderId?: string
   /** The user's own grind setting for this brewer, if they have one. */
   baselineSetting?: number
@@ -89,6 +95,7 @@ export type GeneratedRecipe = {
      */
     hotRatio: number
   }
+  processId?: ProcessId
   grind: GrindAdvice
   grinder?: Grinder
   pours: Pour[]
@@ -227,6 +234,35 @@ const MIN_HOT_RATIO = 8
 /** The bloom is spent from the hot side, which iced brewing makes scarce. */
 const ICED_MAX_BLOOM_SHARE = 0.25
 
+/**
+ * Burr geometry, as a small and openly uncertain offset.
+ *
+ * Flat burrs grind closer to one size — roughly 70-75 % of particles within
+ * ±50 µm of target, against 55-60 % for a conical — so a conical produces more
+ * fines at the same setting. Those fines over-extract and stall the bed, which
+ * is why the same micron target does not taste the same on both.
+ *
+ * The offset is deliberately 15 µm and not more. The sources are consistent on
+ * the direction and inconsistent on the size, and burr geometry within a
+ * category varies more than between categories, so anything bolder would be
+ * false precision.
+ */
+const BURR_MICRON_OFFSET = 15
+
+function burrMicronOffset(grinder?: Grinder): { offset: number; note?: string } {
+  if (!grinder) return { offset: 0 }
+  if (grinder.burrType === 'conical') {
+    return {
+      offset: BURR_MICRON_OFFSET,
+      note: `Conical burrs make a wider spread of particle sizes than flat ones, so more fines at any given setting. Ground ${BURR_MICRON_OFFSET} µm coarser to keep those fines from over-extracting — a small correction, and the direction is better established than the size.`,
+    }
+  }
+  return {
+    offset: -BURR_MICRON_OFFSET,
+    note: `Flat burrs cluster particles near one size, so fewer fines and less of the early over-extraction they cause. Ground ${BURR_MICRON_OFFSET} µm finer to make up the yield.`,
+  }
+}
+
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
 const round5 = (v: number) => Math.round(v / 5) * 5
 /** A cap has to round down, or it stops being a cap. */
@@ -245,8 +281,14 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
     )
   }
 
+  const process = input.processId ? PROCESS_BY_ID[input.processId] : undefined
+  const water = waterAdvice(input.water)
+
   // --- Ratio and water
-  const ratio = input.ratioOverride ?? RATIO_BY_GOAL[input.goal]
+  // A manual ratio overrides the processing nudge too: if the user typed 1:16,
+  // they meant 1:16.
+  const ratio =
+    input.ratioOverride ?? RATIO_BY_GOAL[input.goal] + (process ? process.ratioOffset : 0)
   const waterG = round5(input.doseG * ratio)
 
   // --- Ice, for a Japanese iced brew
@@ -271,20 +313,32 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
   const tempBase = TEMP_BY_ROAST[input.roastLevel]
   const tempAlt = altitudeTempOffset(input.altitudeMasl)
   const tempGoal = TEMP_BY_GOAL[input.goal]
-  const waterTempC = clamp(tempBase + tempAlt + tempGoal + (iced ? ICED_TEMP_OFFSET : 0), 80, 96)
+  const tempProcess = process ? process.tempOffsetC : 0
+  const tempWater = water ? water.tempOffsetC : 0
+  const waterTempC = clamp(
+    tempBase + tempAlt + tempGoal + tempProcess + tempWater + (iced ? ICED_TEMP_OFFSET : 0),
+    80,
+    96,
+  )
 
   // --- Grind
   const alt = altitudeMicronOffset(input.altitudeMasl)
+  const grinder = input.grinderId ? grinderById(input.grinderId) : undefined
+  const burr = burrMicronOffset(grinder)
   const targetMicrons = clamp(
     brewer.baseMicrons +
       MICRONS_BY_ROAST[input.roastLevel] +
       alt.offset +
       MICRONS_BY_GOAL[input.goal] +
+      (process ? process.micronOffset : 0) +
+      (water ? water.micronOffset : 0) +
+      burr.offset +
       (iced ? ICED_MICRON_OFFSET : 0),
     400,
     1200,
   )
-  const grinder = input.grinderId ? grinderById(input.grinderId) : undefined
+  if (water) warnings.push(...water.warnings)
+
   const grind = grinder
     ? grindAdvice(grinder, targetMicrons, input.baselineSetting, brewer.baseMicrons)
     : {
@@ -328,6 +382,11 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
     targetMicrons,
     iced,
     ice: { iceG, hotWaterG, fraction: iceFraction, hotRatio },
+    process,
+    water,
+    burr,
+    tempProcess,
+    tempWater,
     altNote: alt.note,
     bloomG,
     bloomS,
@@ -355,6 +414,7 @@ export function generateRecipe(input: GenerateInput): GeneratedRecipe {
     waterTempC,
     iced,
     ice: { iceG, hotWaterG, fraction: iceFraction, hotRatio },
+    processId: input.processId,
     grind,
     grinder,
     pours: built.pours,
@@ -724,6 +784,11 @@ function buildRationale(a: {
   targetMicrons: number
   iced: boolean
   ice: { iceG: number; hotWaterG: number; fraction: number; hotRatio: number }
+  process?: ProcessMethod
+  water?: WaterAdvice
+  burr: { offset: number; note?: string }
+  tempProcess: number
+  tempWater: number
   altNote?: string
   bloomG: number
   bloomS: number
@@ -776,6 +841,11 @@ function buildRationale(a: {
             ? 'Slightly loose, so brightness reads as brightness rather than intensity.'
             : 'A middle ratio that leaves room to move in either direction once you taste it.',
       'Ratio sets strength. It is not the lever for sour or bitter — that is extraction.',
+      ...(a.process && a.process.ratioOffset !== 0 && a.input.ratioOverride === undefined
+        ? [
+            `${a.process.label} adds ${a.process.ratioOffset} to that. Its sugars arrive early, so a little more water per gram keeps the cup from turning heavy before the extraction is finished.`,
+          ]
+        : []),
     ],
   })
 
@@ -794,7 +864,45 @@ function buildRationale(a: {
         : `Chasing acidity: ${a.tempGoal} °C keeps the bitter, heavy compounds in the grounds.`,
     )
   }
+  if (a.tempProcess !== 0 && a.process) {
+    tempLines.push(
+      a.tempProcess < 0
+        ? `${a.process.label}: ${a.tempProcess} °C. ${a.process.why}`
+        : `${a.process.label}: +${a.tempProcess} °C. ${a.process.why}`,
+    )
+  }
+  if (a.tempWater !== 0) {
+    tempLines.push(
+      `+${a.tempWater} °C for your water's alkalinity — heat is the only lever left once the buffer is neutralising acids on the way out.`,
+    )
+  }
+  if (a.waterTempC === 96) {
+    tempLines.push('Capped at 96 °C. Boiling water scalds the bed and adds nothing.')
+  }
   sections.push({ heading: 'Temperature', value: `${a.waterTempC} °C`, lines: tempLines })
+
+  if (a.process) {
+    sections.push({
+      heading: 'Processing',
+      value: a.process.label,
+      lines: [
+        a.process.character,
+        a.process.why,
+        ...(a.process.technique ? [a.process.technique] : []),
+      ],
+    })
+  }
+
+  if (a.water) {
+    sections.push({
+      heading: 'Water',
+      value: a.water.value,
+      lines: [
+        'Water is 98.5 % of the cup and it is not a passive solvent: hardness carries flavour compounds out of the grounds, alkalinity neutralises the acids once they are out.',
+        ...a.water.lines,
+      ],
+    })
+  }
 
   const grindLines = [
     `${a.brewer.name} sits around ${a.brewer.baseMicrons} µm at a medium roast.`,
@@ -805,6 +913,21 @@ function buildRationale(a: {
         : `A ${roast} roast is brittle and very soluble, so ${MICRONS_BY_ROAST[a.input.roastLevel]} µm coarser to avoid over-extracting.`,
   ]
   if (a.altNote) grindLines.push(a.altNote)
+  if (a.process && a.process.micronOffset !== 0) {
+    grindLines.push(
+      a.process.micronOffset > 0
+        ? `${a.process.label}: ${a.process.micronOffset} µm coarser. Fermentation-derived sugars dissolve early and readily, and pushing them turns fruit into ferment.`
+        : `${a.process.label}: ${Math.abs(a.process.micronOffset)} µm finer. Without mucilage sugars there is less that comes out easily, so extraction needs help.`,
+    )
+  }
+  if (a.water && a.water.micronOffset !== 0) {
+    grindLines.push(
+      a.water.micronOffset > 0
+        ? `Your water is hard, so it extracts harder: ${a.water.micronOffset} µm coarser to hold the yield down.`
+        : `Your water is soft, so it extracts less at any given grind: ${Math.abs(a.water.micronOffset)} µm finer to make it up.`,
+    )
+  }
+  if (a.burr.note) grindLines.push(a.burr.note)
   if (MICRONS_BY_GOAL[goal] !== 0) {
     grindLines.push(
       MICRONS_BY_GOAL[goal] > 0

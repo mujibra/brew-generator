@@ -71,6 +71,13 @@ const COLD_VS_HOT: Card['sources'][number] = {
   url: 'https://onlinelibrary.wiley.com/doi/10.1155/2023/3175570',
 }
 
+const PHOENIX_PROCESS: Card['sources'][number] = {
+  title: 'Washed vs Natural vs Honey: understanding the flavour, and brewing tips',
+  author: 'Phoenix Coffee Roasters',
+  kind: 'practitioner',
+  url: 'https://phoenix-coffeeroasters.com/en/blogs/all-about-coffee/washed-vs-natural-vs-honey-geschmack-verstehen',
+}
+
 const REVIEWED = '2026-08-27'
 
 export const CARDS: Card[] = [
@@ -579,9 +586,66 @@ Growing altitude compounds this. A high-grown bean is denser still, so a light r
 
 The roast defect most people never learn to name is **baked**: a roast that spent too long between first crack and the drop, without enough heat. It is not scorched or obviously burnt. It simply tastes flat, cereal-like and hollow, with no acidity and no sweetness, and no brewing adjustment recovers it. If a coffee tastes like nothing in particular across three well-executed brews at different grinds, consider that the roast rather than you.`,
     },
-    related: ['extraction/temperature', 'roast/degassing', 'extraction/grind-size'],
+    related: [
+      'extraction/temperature',
+      'roast/degassing',
+      'extraction/grind-size',
+      'roast/processing',
+    ],
     sources: [CRAFT_AND_SCIENCE, RAO],
     confidence: 'established',
+    lastReviewed: REVIEWED,
+  },
+
+  {
+    id: 'roast/processing',
+    category: 'roast',
+    name: 'Processing: washed, natural, honey, anaerobic',
+    aliases: [
+      'processing',
+      'process',
+      'washed',
+      'natural',
+      'honey',
+      'anaerobic',
+      'fermentation',
+      'dry process',
+      'carbonic maceration',
+      'fermenty',
+      'boozy',
+    ],
+    summary:
+      'How the fruit was removed from the seed decides how much fermentation-derived sugar the bean carries. That changes what dissolves, how fast, and therefore how you brew it.',
+    practicalImplication:
+      'Naturals and anaerobics brew cooler and coarser than washed coffees of the same roast — around 3-4 °C down and 30-40 µm out. If a fruity coffee tastes boozy or overripe, you extracted it like a washed one.',
+    body: {
+      quick:
+        'Washed coffees have the mucilage stripped before drying, so the cup is the seed itself: clean, acidic, and needing heat to give up sweetness. Naturals dry inside the whole cherry and carry fermentation sugars that dissolve fast, so they brew cooler and coarser. Honey is between the two.',
+      standard: `The seed is inside a fruit, and what happens to that fruit before drying is the largest single fact about the bean that is not the roast.
+
+**Washed** removes skin and mucilage before drying. Nothing ferments against the seed, so what you taste is origin and varietal — high clarity, defined acidity, lighter body. There is less that dissolves easily, so washed coffees take a hotter, finer brew without going muddy, and usually need it.
+
+**Natural** dries the whole cherry with the seed inside. The mucilage ferments against it for weeks, leaving sugars and aromatic compounds that are both more soluble and much easier to overshoot. Push a natural and fruit becomes ferment, and body becomes heaviness. Brew cooler, coarser, with slightly more water per gram, and pour gently.
+
+**Honey** is the continuum: skin off, some mucilage left on to dry. Yellow honey leaves the least and behaves close to washed; black honey leaves the most and behaves close to natural. Red sits in the middle, which is where the baseline sits.
+
+**Anaerobic** and its relatives — carbonic maceration, lactic, yeast-inoculated — ferment the cherry in a sealed vessel with the oxygen limited or removed. That suppresses the spoilage organisms and lets chosen yeasts and lactic bacteria dominate, concentrating exactly the volatile compounds that read as wine, spice and tropical fruit. Those same compounds go vinegary and astringent when over-extracted, so this is the category where restraint pays most.`,
+      deep: `The practical trap is that processing and roast level pull in opposite directions and people only adjust for one.
+
+A light-roasted natural is dense and under-developed, which says grind finer and brew hotter. It is also loaded with soluble fermentation sugars, which says the opposite. The roast lever is the stronger of the two, but ignoring the process entirely is how a light natural ends up tasting simultaneously sour and boozy — under-extracted on the seed's own acids and over-extracted on the ferment.
+
+Agitation matters more here than anywhere else. The fermentation-derived compounds sit in the most accessible fraction, so a hard pour or an aggressive stir pulls them out first and hardest. On an anaerobic, a gentler pour is worth more than any grind change you could make.
+
+Bags do not use consistent language. "Natural anaerobic" is both, and should be brewed as an anaerobic, because the sealed ferment is the dominant fact about it. "Pulped natural" is honey, not natural, despite the name. "Semi-washed" is closer to honey than to washed. When the label is unclear, taste first at the washed baseline and move toward restraint if it reads boozy.`,
+    },
+    related: [
+      'roast/levels',
+      'extraction/solubility-order',
+      'extraction/agitation',
+      'sensory/astringency',
+    ],
+    sources: [CRAFT_AND_SCIENCE, PHOENIX_PROCESS],
+    confidence: 'emerging',
     lastReviewed: REVIEWED,
   },
 

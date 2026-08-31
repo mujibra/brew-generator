@@ -2,6 +2,7 @@ import { compileRecipe, targetMassAt } from '@/lib/brew/steps'
 import { describe, expect, it } from 'vitest'
 import { BREWER_LIST } from './brewers'
 import { type BrewGoal, GOALS, type GenerateInput, generateRecipe, toRunnable } from './generate'
+import { processFromText } from './process'
 
 const base: GenerateInput = {
   brewerId: 'v60',
@@ -274,10 +275,11 @@ describe('grinder registry', () => {
     const r = gen({ grinderId: 'timemore-s3' })
     expect(r.grinder?.name).toBe('Timemore Chestnut S3')
     expect(r.grinder?.micronsPerUnit).toBe(15)
-    // V60 at a light roast targets 660 µm, so 660 / 15 = 44 clicks.
-    expect(r.grind.targetMicrons).toBe(660)
-    expect(r.grind.settingUnits).toBe(44)
-    expect(r.grind.text).toMatch(/44 clicks/)
+    // V60 at a light roast targets 660 µm, plus 15 for the S3's conical burrs,
+    // so 675 / 15 = 45 clicks.
+    expect(r.grind.targetMicrons).toBe(675)
+    expect(r.grind.settingUnits).toBe(45)
+    expect(r.grind.text).toMatch(/45 clicks/)
   })
 
   it('gives the S3 a tighter uncertainty band than a coarser-stepped grinder', () => {
@@ -492,5 +494,121 @@ describe('manual ice fraction', () => {
   it('is ignored when the brew is not iced', () => {
     const r = gen({ iceFractionOverride: 0.5 })
     expect(r.ice).toEqual({ iceG: 0, hotWaterG: r.waterG, fraction: 0, hotRatio: r.ratio })
+  })
+})
+
+describe('processing method', () => {
+  it('brews a natural cooler and coarser than a washed', () => {
+    const washed = gen({ processId: 'washed' })
+    const natural = gen({ processId: 'natural' })
+    expect(natural.waterTempC).toBeLessThan(washed.waterTempC)
+    expect(natural.grind.targetMicrons).toBeGreaterThan(washed.grind.targetMicrons)
+    expect(natural.ratio).toBeGreaterThan(washed.ratio)
+  })
+
+  it('treats anaerobic as the most restrained of all', () => {
+    const anaerobic = gen({ processId: 'anaerobic' })
+    const natural = gen({ processId: 'natural' })
+    expect(anaerobic.waterTempC).toBeLessThanOrEqual(natural.waterTempC)
+    expect(anaerobic.grind.targetMicrons).toBeGreaterThan(natural.grind.targetMicrons)
+  })
+
+  it('leaves honey on the baseline, because that is what honey is', () => {
+    const honey = gen({ processId: 'honey' })
+    const none = gen()
+    expect(honey.waterTempC).toBe(none.waterTempC)
+    expect(honey.grind.targetMicrons).toBe(none.grind.targetMicrons)
+  })
+
+  it('changes nothing at all when the process is unknown', () => {
+    const none = gen()
+    expect(none.processId).toBeUndefined()
+    expect(none.rationale.some((s) => s.heading === 'Processing')).toBe(false)
+  })
+
+  it('explains the ferment rather than only moving the numbers', () => {
+    const section = gen({ processId: 'natural' }).rationale.find((s) => s.heading === 'Processing')
+    expect(section?.value).toBe('Natural')
+    expect(section?.lines.join(' ')).toMatch(/ferment/i)
+    expect(section?.lines.join(' ')).toMatch(/agitation/i)
+  })
+
+  // A typed ratio is the user's decision and outranks every suggestion.
+  it('never overrides a manual ratio', () => {
+    expect(gen({ processId: 'natural', ratioOverride: 15 }).ratio).toBe(15)
+  })
+
+  it('reads what the bag actually says', () => {
+    expect(processFromText('Natural Anaerobic')).toBe('anaerobic')
+    expect(processFromText('carbonic maceration')).toBe('anaerobic')
+    expect(processFromText('Red Honey')).toBe('honey')
+    expect(processFromText('pulped natural')).toBe('honey')
+    expect(processFromText('Natural / dry process')).toBe('natural')
+    expect(processFromText('Fully washed')).toBe('washed')
+    expect(processFromText('lavado')).toBe('washed')
+    expect(processFromText('')).toBeUndefined()
+    expect(processFromText(undefined)).toBeUndefined()
+  })
+})
+
+describe('water', () => {
+  const soft = { ghPpmCaCO3: 15, khPpmCaCO3: 10 }
+  const sca = { ghPpmCaCO3: 68, khPpmCaCO3: 40 }
+  const hard = { ghPpmCaCO3: 180, khPpmCaCO3: 120 }
+
+  it('grinds finer for soft water and coarser for hard, because hardness extracts', () => {
+    expect(gen({ water: soft }).grind.targetMicrons).toBeLessThan(
+      gen({ water: sca }).grind.targetMicrons,
+    )
+    expect(gen({ water: hard }).grind.targetMicrons).toBeGreaterThan(
+      gen({ water: sca }).grind.targetMicrons,
+    )
+  })
+
+  it('leaves the grind alone when the water is already in the SCA range', () => {
+    expect(gen({ water: sca }).grind.targetMicrons).toBe(gen().grind.targetMicrons)
+  })
+
+  // Alkalinity destroys acid after extraction, so no grind setting recovers it.
+  // Saying so is the correct output; silently moving a lever would be a lie.
+  it('warns rather than pretends when alkalinity is flattening the cup', () => {
+    const r = gen({ water: hard })
+    expect(r.warnings.join(' ')).toMatch(/neutralises coffee acids/i)
+    expect(r.warnings.join(' ')).toMatch(/no grind setting fixes this/i)
+  })
+
+  it('warns the other way when there is no buffer at all', () => {
+    expect(gen({ water: soft }).warnings.join(' ')).toMatch(/very low/i)
+  })
+
+  it('says nothing about water when the user has not told it any', () => {
+    expect(gen().rationale.some((s) => s.heading === 'Water')).toBe(false)
+    expect(gen().warnings).toEqual([])
+  })
+
+  it('ignores impossible readings instead of generating nonsense', () => {
+    const bad = gen({ water: { ghPpmCaCO3: Number.NaN, khPpmCaCO3: 40 } })
+    expect(bad.grind.targetMicrons).toBe(gen().grind.targetMicrons)
+    expect(bad.rationale.some((s) => s.heading === 'Water')).toBe(false)
+  })
+})
+
+describe('burr geometry', () => {
+  it('grinds a conical coarser than a flat, for the fines it makes', () => {
+    const conical = gen({ grinderId: 'comandante-c40' })
+    const flat = gen({ grinderId: 'fellow-ode-2' })
+    expect(conical.grinder?.burrType).toBe('conical')
+    expect(flat.grinder?.burrType).toBe('flat')
+    expect(conical.grind.targetMicrons).toBeGreaterThan(flat.grind.targetMicrons)
+  })
+
+  it('says the direction is better established than the size', () => {
+    const grind = gen({ grinderId: 'comandante-c40' }).rationale.find((s) => s.heading === 'Grind')
+    expect(grind?.lines.join(' ')).toMatch(/fines/i)
+    expect(grind?.lines.join(' ')).toMatch(/better established than the size/i)
+  })
+
+  it('changes nothing when no grinder is chosen', () => {
+    expect(gen({ grinderId: undefined }).grind.targetMicrons).toBe(gen().grind.targetMicrons)
   })
 })

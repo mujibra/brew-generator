@@ -14,6 +14,7 @@ import {
 } from '@/lib/calc/freshness'
 import type { BeanRecord, BrewRecord } from '@/lib/db/repository'
 import type { GenerateInput } from '@/lib/recipes/generate'
+import { type ProcessId, processFromText } from '@/lib/recipes/process'
 
 export const ROAST_LEVELS: { id: RoastLevel; label: string }[] = [
   { id: 'veryLight', label: 'Very light' },
@@ -91,13 +92,17 @@ export function consumeDose(
 export function beanToGenerateInput(
   bean: BeanRecord,
   now: number,
-): Pick<GenerateInput, 'roastLevel' | 'altitudeMasl' | 'daysOffRoast'> {
+): Pick<GenerateInput, 'roastLevel' | 'altitudeMasl' | 'daysOffRoast' | 'processId'> {
   const age = beanAge(bean, now)
+  // The bag's process is free text — "Natural Anaerobic", "Red Honey" — so it
+  // is read rather than required to have come from a dropdown.
+  const processId = (bean.processId as ProcessId | undefined) ?? processFromText(bean.process)
   return {
     ...(bean.roastLevel ? { roastLevel: bean.roastLevel } : {}),
     ...(bean.altitudeMasl !== undefined ? { altitudeMasl: bean.altitudeMasl } : {}),
     ...(age !== undefined ? { daysOffRoast: age } : {}),
-  } as Pick<GenerateInput, 'roastLevel' | 'altitudeMasl' | 'daysOffRoast'>
+    ...(processId ? { processId } : {}),
+  } as Pick<GenerateInput, 'roastLevel' | 'altitudeMasl' | 'daysOffRoast' | 'processId'>
 }
 
 export type TimelinePoint = { daysOffRoast: number; score: number; brewId: string }

@@ -138,7 +138,7 @@ Working:
   drawdown from its time, and showing the grind move in absolute terms
   (47 → 44 clicks). Remembers what you have already tried.
 - **/gear** — your grinder and your own baseline setting per brewer.
-- **/learn** — 19 knowledge cards on extraction, grind, roast, water and tasting,
+- **/learn** — 20 knowledge cards on extraction, grind, roast, water and tasting,
   searchable by symptom ("flat", "drying") rather than by jargon. Each has a
   Quick / Standard / Deep depth toggle, sources, and a confidence label.
 - **/journal** — every logged brew records the dripper it was made on and what
@@ -155,7 +155,7 @@ Working:
 The app is an installable PWA and works fully offline: every route and asset is
 precached at build time.
 
-Built and tested with no UI yet: recipe scaling. 320 tests.
+Built and tested with no UI yet: recipe scaling. 336 tests.
 
 Not built: a tools index (F9), saving a generated recipe to a library (F2.2),
 onboarding (13.3), an app-wide depth setting (13.2), cupping (F8), the rest of
@@ -233,6 +233,42 @@ reports which input moved which lever. Roast level dominates grind and
 temperature; altitude is a secondary density proxy; the goal picks the ratio and
 the pour split. Brewer characteristics in `lib/recipes/brewers.ts` cap what the
 bed will tolerate.
+
+Levers, and what moves each one:
+
+| Lever | Moved by |
+| --- | --- |
+| Ratio | goal, processing, manual override |
+| Temperature | roast level, altitude, goal, processing, water alkalinity, iced |
+| Grind | brewer, roast level, altitude, goal, processing, water hardness, burr type, iced |
+| Pours | goal, brewer cap, manual override |
+| Bloom | roast level, days off roast, iced hot-water share |
+
+Three of those arrived late, and the reason is worth stating: the app already
+held the data and the generator ignored it. The shelf recorded a bag's process
+and never used it. The water lab computed a hardness and alkalinity that
+nothing downstream read — it did not even save them. The grinder registry knew
+burr geometry and the grind advice did not.
+
+**Processing** is the second-biggest lever after roast level and it pulls the
+opposite way. A natural is brewed 3 °C cooler and 30 µm coarser than a washed
+of the same roast, because fermentation-derived sugars dissolve early and
+readily and pushing them turns fruit into ferment. `processFromText` reads what
+the bag actually says — "Natural Anaerobic" is brewed as an anaerobic, "pulped
+natural" is honey despite the name.
+
+**Water** does two unrelated things. Hardness is part of the extraction
+mechanism — Mg²⁺ binds coffee's malic, lactic and citric acids more strongly
+than Ca²⁺ does — so soft water under-extracts at a given grind and the grind
+moves to meet it. Alkalinity is not a lever at all: it neutralises acids after
+they are extracted, so perceived acidity is what you extracted minus what the
+water buffers away. No grind setting recovers that, and the generator says so
+rather than moving something that cannot reach.
+
+**Burr geometry** is a deliberately small ±15 µm. Flat burrs cluster particles
+near one size, conicals make more fines at the same setting. The sources agree
+on the direction and disagree on the size, and geometry varies more within a
+category than between categories, so anything bolder would be false precision.
 
 The goal's ratio is a default, not a lock — a manual override moves only the
 water, because ratio is strength and grind is extraction.

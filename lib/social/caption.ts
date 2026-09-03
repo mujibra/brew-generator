@@ -156,7 +156,7 @@ function hook(input: CaptionInput, personalBest: boolean): string {
     return `Best cup I have pulled off this bag — ${brew.score}/10.`
   }
   if (brew.iced) {
-    return `Flash brewed straight onto ice. Full strength, none of the dilution.`
+    return 'Flash brewed straight onto ice. Full strength, none of the dilution.'
   }
   if (
     bean?.processLabel &&

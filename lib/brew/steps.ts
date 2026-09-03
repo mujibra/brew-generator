@@ -215,3 +215,17 @@ export function targetFlowAt(c: CompiledRecipe, t: number): number {
   if (!step.pouring || step.durationS === 0 || t > step.endS) return 0
   return (step.waterToG - step.waterFromG) / step.durationS
 }
+
+/**
+ * The pour schedule, reduced to what is worth keeping and worth reading.
+ *
+ * A compiled recipe carries every step — waits, swirls, drains, the serve —
+ * but the schedule people write down and follow is only the water: at what
+ * time, to what cumulative mass. This is what the journal freezes onto a brew
+ * record and what the caption prints.
+ */
+export function pourSchedule(c: CompiledRecipe): { atS: number; toG: number; label: string }[] {
+  return c.steps
+    .filter((s) => s.pouring && s.waterToG > s.waterFromG)
+    .map((s) => ({ atS: s.startS, toG: Math.round(s.waterToG), label: s.label }))
+}

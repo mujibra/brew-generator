@@ -101,6 +101,14 @@ export type BrewRecord = Entity & {
   iced?: boolean
   /** Ice in the carafe, grams. Part of waterG, not additional to it. */
   iceG?: number
+  /**
+   * The pour schedule actually followed, frozen at log time.
+   *
+   * Stored rather than looked up because a generated recipe has nowhere to be
+   * looked up from: it exists only in the session that produced it. Without
+   * this, brewing a built recipe and logging it lost the schedule forever.
+   */
+  pours?: { atS: number; toG: number; label: string }[]
   beanId?: Id
   /** Days off roast at brew time, frozen in so it survives the bean being edited. */
   daysOffRoast?: number

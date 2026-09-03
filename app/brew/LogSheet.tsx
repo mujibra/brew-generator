@@ -2,6 +2,7 @@
 
 import { Select } from '@/app/components/Select'
 import type { Session } from '@/lib/brew/session'
+import { compileRecipe, pourSchedule } from '@/lib/brew/steps'
 import { formatElapsed } from '@/lib/brew/timer'
 import {
   beverageMass,
@@ -142,6 +143,9 @@ export function LogSheet({
       const now = Date.now()
       const bean = beans.find((b) => b.id === beanId)
       const age = bean ? beanAge(bean, now) : undefined
+      const schedule = pourSchedule(
+        compileRecipe({ doseG: recipe.doseG, prep: recipe.prep, steps: recipe.steps }),
+      )
 
       await repository().brews.put({
         id: crypto.randomUUID(),
@@ -155,6 +159,7 @@ export function LogSheet({
         ...(recipe.goal ? { goal: recipe.goal } : { goal: recipe.intent }),
         ...(recipe.iced ? { iced: true } : {}),
         ...(recipe.iceG !== undefined ? { iceG: recipe.iceG } : {}),
+        ...(schedule.length > 0 ? { pours: schedule } : {}),
         ...(grind.trim() === '' ? {} : { grindSetting: grind.trim() }),
         ...(gear?.grinderId ? { grinderId: gear.grinderId } : {}),
         ...(age !== undefined ? { daysOffRoast: age } : {}),

@@ -157,7 +157,7 @@ Working:
 The app is an installable PWA and works fully offline: every route and asset is
 precached at build time.
 
-Built and tested with no UI yet: recipe scaling. 373 tests.
+Built and tested with no UI yet: recipe scaling. 383 tests.
 
 Not built: a tools index (F9), saving a generated recipe to a library (F2.2),
 onboarding (13.3), an app-wide depth setting (13.2), cupping (F8), the rest of
@@ -338,7 +338,17 @@ brew with nothing special gets an honest opener rather than a manufactured
 superlative.
 
 **It never invents.** No TDS reading, no extraction line. No note written, none
-quoted. A caption generator that embellishes is one you have to proofread.
+quoted. No schedule on the record, no pour block. A caption generator that
+embellishes is one you have to proofread.
+
+The pour schedule is the part a video is actually of, so it prints as its own
+block — cumulative targets against the clock, because that is what the scale
+reads. `BrewRecord.pours` freezes it at log time, because a generated recipe
+exists only in the session that produced it and has nowhere to be looked up
+from later. Brews logged before that field existed still get a schedule if they
+were a built-in recipe, derived from the recipe itself; a generated one from
+back then simply has no block, since inventing a plausible schedule would mean
+inventing what somebody poured.
 
 **Platforms differ in kind, not just length.** YouTube needs a title, which is
 a search query rather than a sentence, so it leads with gear and numbers.

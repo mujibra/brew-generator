@@ -239,3 +239,59 @@ describe('personal best', () => {
     expect(isPersonalBest(mine, all)).toBe(true)
   })
 })
+
+describe('the pour schedule', () => {
+  const schedule = [
+    { atS: 0, toG: 45, label: 'Bloom' },
+    { atS: 45, toG: 105, label: 'Pour 1' },
+    { atS: 80, toG: 175, label: 'Pour 2' },
+    { atS: 115, toG: 250, label: 'Pour 3' },
+    { atS: 150, toG: 320, label: 'Pour 4' },
+  ]
+
+  it('prints cumulative targets against the clock, because that is what the scale reads', () => {
+    const c = generateCaption({ brew: brew(), pours: schedule }, 'instagram')
+    expect(c.body).toContain('🫗 Pours')
+    expect(c.body).toMatch(/0:00 → 45 g {2}\(bloom\)/)
+    expect(c.body).toMatch(/0:45 → 105 g/)
+    expect(c.body).toMatch(/2:30 → 320 g/)
+  })
+
+  it('marks the bloom and nothing else', () => {
+    const c = generateCaption({ brew: brew(), pours: schedule }, 'instagram')
+    expect(c.body.match(/\(bloom\)/g)).toHaveLength(1)
+  })
+
+  it('reads the schedule off the record when the caller passes none', () => {
+    const c = generateCaption({ brew: brew({ pours: schedule }) }, 'tiktok')
+    expect(c.body).toMatch(/1:55 → 250 g/)
+  })
+
+  // A generated recipe brewed before the record stored a schedule has none, and
+  // inventing a plausible one would be inventing what somebody poured.
+  it('omits the block entirely rather than guessing', () => {
+    const c = generateCaption({ brew: brew() }, 'instagram')
+    expect(c.body).not.toContain('Pours')
+    expect(c.body).not.toContain('→')
+  })
+
+  it('leaves every platform inside its limit with a long schedule', () => {
+    const long = Array.from({ length: 9 }, (_, i) => ({
+      atS: i * 30,
+      toG: 40 + i * 35,
+      label: i === 0 ? 'Bloom' : `Pour ${i}`,
+    }))
+    for (const p of ALL) {
+      const c = generateCaption({ brew: brew({ notes: 'x'.repeat(300) }), pours: long }, p)
+      expect(c.chars, p).toBeLessThanOrEqual(c.limit)
+    }
+  })
+
+  it('keeps the hook first, so the schedule never eats the fold', () => {
+    const c = generateCaption({ brew: brew({ score: 9 }), pours: schedule }, 'instagram', {
+      personalBest: true,
+    })
+    expect(c.body.indexOf('Best cup')).toBeLessThan(c.body.indexOf('🫗'))
+    expect(c.hookFits).toBe(true)
+  })
+})

@@ -108,6 +108,13 @@ export type CaptionInput = {
   /** Resolved recipe name, which the record may not carry. */
   recipeName?: string
   grinderName?: string
+  /**
+   * The pour schedule. Comes off the brew record when it was logged after the
+   * record started storing one, and is otherwise derived from the built-in
+   * recipe by the caller — a generated recipe brewed before that has none, and
+   * the caption simply omits the block rather than guessing at it.
+   */
+  pours?: { atS: number; toG: number; label: string }[]
 }
 
 export type GeneratedCaption = {
@@ -289,6 +296,18 @@ function recipeLines(input: CaptionInput): string[] {
 
   if (brew.iced && brew.iceG !== undefined) {
     lines.push(`🧊 ${brew.waterG - brew.iceG} g hot onto ${brew.iceG} g ice`)
+  }
+
+  // The pour schedule is the part a video is actually of, so it gets its own
+  // block rather than being folded into the summary line. Cumulative targets,
+  // because that is what the scale reads.
+  const pours = input.pours ?? brew.pours
+  if (pours && pours.length > 0) {
+    lines.push('🫗 Pours')
+    for (const p of pours) {
+      const isBloom = /bloom/i.test(p.label)
+      lines.push(`   ${mmss(p.atS)} → ${p.toG} g${isBloom ? '  (bloom)' : ''}`)
+    }
   }
 
   const taste = [...(brew.tags ?? [])].join(', ')

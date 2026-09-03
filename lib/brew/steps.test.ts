@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { type RecipeInput, compileRecipe, stepIndexAt, targetFlowAt, targetMassAt } from './steps'
+import {
+  type RecipeInput,
+  compileRecipe,
+  pourSchedule,
+  stepIndexAt,
+  targetFlowAt,
+  targetMassAt,
+} from './steps'
 
 /** A Hoffmann-shaped V60: bloom, two pours, swirl, drain. */
 const v60: RecipeInput = {
@@ -153,5 +160,47 @@ describe('targetFlowAt', () => {
   it('reports zero when not pouring', () => {
     expect(targetFlowAt(c, 80)).toBe(0)
     expect(targetFlowAt(c, 180)).toBe(0)
+  })
+})
+
+describe('pourSchedule', () => {
+  const compiled = compileRecipe({
+    doseG: 20,
+    steps: [
+      { kind: 'bloom', toG: 45, durationS: 45 },
+      { kind: 'pour', toG: 150, pourS: 15 },
+      { kind: 'agitate', style: 'swirl', durationS: 5 },
+      { kind: 'pour', toG: 320, pourS: 20 },
+      { kind: 'drain', expectedS: 40 },
+      { kind: 'serve' },
+    ],
+  })
+
+  it('keeps only the steps that add water', () => {
+    const s = pourSchedule(compiled)
+    expect(s).toHaveLength(3)
+    expect(s.map((p) => p.toG)).toEqual([45, 150, 320])
+  })
+
+  it('reports the time each pour starts, not when it ends', () => {
+    const s = pourSchedule(compiled)
+    expect(s[0]!.atS).toBe(0)
+    expect(s[1]!.atS).toBe(45)
+  })
+
+  it('carries the label, so the bloom can be named downstream', () => {
+    expect(pourSchedule(compiled)[0]!.label).toMatch(/bloom/i)
+  })
+
+  it('drops a zero-water pour rather than printing a no-op line', () => {
+    const flat = compileRecipe({
+      doseG: 20,
+      steps: [
+        { kind: 'pour', toG: 300, pourS: 20 },
+        { kind: 'wait', durationS: 200 },
+        { kind: 'serve' },
+      ],
+    })
+    expect(pourSchedule(flat)).toHaveLength(1)
   })
 })

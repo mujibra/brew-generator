@@ -14,8 +14,10 @@
  */
 
 import { Eyebrow } from '@/app/components/ui'
+import { compileRecipe, pourSchedule } from '@/lib/brew/steps'
 import type { BeanRecord, BrewRecord } from '@/lib/db/repository'
 import { grinderById } from '@/lib/grinders/registry'
+import { recipeById, toRecipeInput } from '@/lib/recipes/builtin'
 import { PROCESS_BY_ID, processFromText, resolveProcessId } from '@/lib/recipes/process'
 import { PLATFORMS, type Platform, generateCaption, isPersonalBest } from '@/lib/social/caption'
 import { useMemo, useRef, useState } from 'react'
@@ -45,9 +47,18 @@ export function ShareSheet({
     const processId = bean
       ? (resolveProcessId(bean.processId) ?? processFromText(bean.process))
       : undefined
+    // Brews logged before the record stored a schedule can still have one, as
+    // long as they were a built-in recipe. A generated recipe from back then is
+    // gone, and the caption omits the block rather than inventing a plausible
+    // schedule that was never actually poured.
+    const builtin = brew.recipeId ? recipeById(brew.recipeId) : undefined
+    const pours =
+      brew.pours ?? (builtin ? pourSchedule(compileRecipe(toRecipeInput(builtin))) : undefined)
+
     return generateCaption(
       {
         brew,
+        ...(pours && pours.length > 0 ? { pours } : {}),
         ...(bean
           ? {
               bean: {

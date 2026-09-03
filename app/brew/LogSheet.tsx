@@ -154,6 +154,7 @@ export function LogSheet({
         brewerName: recipe.methodName,
         ...(recipe.goal ? { goal: recipe.goal } : { goal: recipe.intent }),
         ...(recipe.iced ? { iced: true } : {}),
+        ...(recipe.iceG !== undefined ? { iceG: recipe.iceG } : {}),
         ...(grind.trim() === '' ? {} : { grindSetting: grind.trim() }),
         ...(gear?.grinderId ? { grinderId: gear.grinderId } : {}),
         ...(age !== undefined ? { daysOffRoast: age } : {}),

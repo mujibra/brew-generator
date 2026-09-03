@@ -5,7 +5,7 @@ import { PageBody, PageHeader } from '@/app/components/ui'
 import { Select } from '@/app/components/Select'
 import { formatElapsed } from '@/lib/brew/timer'
 import { repository } from '@/lib/db/dexie'
-import type { BrewRecord } from '@/lib/db/repository'
+import type { BeanRecord, BrewRecord } from '@/lib/db/repository'
 import { exportFilename, toCsv, toJson } from '@/lib/journal/export'
 import {
   type Filters,
@@ -21,6 +21,7 @@ import { RECIPES } from '@/lib/recipes/builtin'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { ControlChart } from './ControlChart'
+import { ShareSheet } from './ShareSheet'
 
 const RECIPE_NAMES = new Map<string, string>([
   ...RECIPES.map((r) => [r.id, r.name] as [string, string]),
@@ -34,6 +35,8 @@ const TAGS = ['sour', 'bitter', 'thin', 'muddy', 'sweet', 'clean', 'balanced', '
 
 export function JournalView() {
   const [brews, setBrews] = useState<BrewRecord[] | null>(null)
+  const [beans, setBeans] = useState<BeanRecord[]>([])
+  const [grinderId, setGrinderId] = useState<string | undefined>()
   const [error, setError] = useState('')
   const [filters, setFilters] = useState<Filters>({})
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -46,6 +49,16 @@ export function JournalView() {
         setError((e as Error).message)
         setBrews([])
       })
+    // The bag and the grinder are only needed for the caption, so a failure
+    // here degrades the caption rather than breaking the journal.
+    repository()
+      .beans.all()
+      .then(setBeans)
+      .catch(() => setBeans([]))
+    repository()
+      .settings.get('gear')
+      .then((g) => setGrinderId(g?.grinderId))
+      .catch(() => setGrinderId(undefined))
   }, [])
 
   const stats = useMemo(() => summarise(brews ?? [], Date.now()), [brews])
@@ -343,7 +356,14 @@ export function JournalView() {
             </button>
 
             {selected?.id === b.id && (
-              <Detail brew={selected} onChange={update} onDelete={remove} />
+              <Detail
+                brew={selected}
+                bean={beans.find((x) => x.id === selected.beanId)}
+                allBrews={brews ?? []}
+                grinderId={grinderId}
+                onChange={update}
+                onDelete={remove}
+              />
             )}
           </li>
         ))}
@@ -381,10 +401,16 @@ export function JournalView() {
 
 function Detail({
   brew,
+  bean,
+  allBrews,
+  grinderId,
   onChange,
   onDelete,
 }: {
   brew: BrewRecord
+  bean?: BeanRecord
+  allBrews: BrewRecord[]
+  grinderId?: string
   onChange: (id: string, patch: Partial<BrewRecord>) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }) {
@@ -403,6 +429,7 @@ function Detail({
         {brew.brewerName && <Fact label="Dripper" value={brew.brewerName} />}
         {brew.goal && <Fact label="Aimed at" value={brew.goal} />}
         {brew.iced && <Fact label="Style" value="Japanese iced" />}
+        {brew.iceG !== undefined && <Fact label="Ice" value={`${brew.iceG} g`} />}
         {brew.tdsPct !== undefined && <Fact label="TDS" value={`${brew.tdsPct} %`} />}
         {brew.eyPct !== undefined && <Fact label="Yield" value={`${brew.eyPct.toFixed(1)} %`} />}
         {brew.beverageG !== undefined && <Fact label="In the cup" value={`${brew.beverageG} g`} />}
@@ -462,6 +489,14 @@ function Detail({
           className="mt-2 w-full p-3 text-sm rounded-lg bg-[var(--color-raised)] outline-none transition-colors duration-200 focus:bg-[var(--color-bg)] focus:ring-2 focus:ring-[var(--color-accent)]"
         />
       </label>
+
+      <ShareSheet
+        brew={brew}
+        bean={bean}
+        allBrews={allBrews}
+        recipeName={recipeName(brew.recipeId)}
+        grinderId={grinderId}
+      />
 
       <div className="mt-4 flex gap-2">
         <Link

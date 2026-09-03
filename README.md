@@ -110,6 +110,7 @@ lib/dialin/     hypotheses and rules as data, plus the scoring engine
 lib/gear/       grinder choice, per-brewer baselines, dial-in confirm loop
 lib/learn/      knowledge cards, with editorial rules enforced by tests
 lib/journal/    log analysis, control chart maths, CSV and JSON export
+lib/social/     social captions and hashtags, per platform
 lib/shelf/      bean records, freshness, dose tracking, per-bag timeline
 lib/recipes/    brewer characteristics, built-in recipes, the recipe generator
 lib/grinders/   grinder registry and micron-to-setting translation
@@ -142,7 +143,8 @@ Working:
   searchable by symptom ("flat", "drying") rather than by jargon. Each has a
   Quick / Standard / Deep depth toggle, sources, and a confidence label.
 - **/journal** — every logged brew records the dripper it was made on and what
-  the cup was aimed at, and is searchable and filterable, with a brew
+  the cup was aimed at, generates a social caption per platform from its own
+  numbers, and is searchable and filterable, with a brew
   control chart, a score-weighted personal preference zone, per-recipe averages,
   inline editing, and CSV/JSON export.
 - **/shelf** — bags with freshness state, remaining dose and brews-left, a
@@ -155,7 +157,7 @@ Working:
 The app is an installable PWA and works fully offline: every route and asset is
 precached at build time.
 
-Built and tested with no UI yet: recipe scaling. 347 tests.
+Built and tested with no UI yet: recipe scaling. 373 tests.
 
 Not built: a tools index (F9), saving a generated recipe to a library (F2.2),
 onboarding (13.3), an app-wide depth setting (13.2), cupping (F8), the rest of
@@ -319,6 +321,44 @@ the builder links to it.
 Grind advice always prefers an offset from the user's own baseline setting over
 an absolute micron figure, because cross-grinder micron claims are not reliable
 enough to state flatly (PRD F6 R1/R3).
+
+## Captions
+
+`lib/social/caption.ts` turns a brew record into a caption for Instagram,
+TikTok or YouTube Shorts. The record already holds everything a post needs, and
+retyping it by hand is how an interesting cup ends up captioned "morning brew".
+
+Three rules:
+
+**The hook is chosen, not templated.** The first line is the only line most
+people read, and Instagram truncates at ~125 characters. So the generator ranks
+what is actually distinctive — a personal best on that bag, an experimental
+ferment, a yield inside the Golden Cup box, a flash brew — and leads with it. A
+brew with nothing special gets an honest opener rather than a manufactured
+superlative.
+
+**It never invents.** No TDS reading, no extraction line. No note written, none
+quoted. A caption generator that embellishes is one you have to proofread.
+
+**Platforms differ in kind, not just length.** YouTube needs a title, which is
+a search query rather than a sentence, so it leads with gear and numbers.
+TikTok allows 30 hashtags and its own guidance says 3-5, so the recommendation
+wins over the cap. Instagram takes 12 and hides everything past the fold.
+Hashtags are ranked most-specific-first — process, origin, roaster, gear, then
+method, and the generic coffee tags last, because those are the most
+competitive and the least useful.
+
+| | Limit | Fold | Hashtags used | Cap |
+| --- | --- | --- | --- | --- |
+| Instagram | 2,200 | 125 | 12 | 30 |
+| TikTok | 4,000 | 100 | 5 | 30 |
+| YouTube Shorts | 5,000 | 100 | 8 (+#Shorts) | 15, ignored past that |
+
+The counter reports the fold, not just the cap, because a caption that fits the
+limit can still be broken in the feed. The clipboard API is refused in plenty of
+real situations — insecure origin, locked-down in-app browser, denied
+permission — so a failed copy selects the text and names the modifier key
+instead of doing nothing.
 
 ## The control chart
 

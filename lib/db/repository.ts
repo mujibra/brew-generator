@@ -99,6 +99,8 @@ export type BrewRecord = Entity & {
   goal?: string
   /** Japanese iced — brewed onto ice rather than hot. */
   iced?: boolean
+  /** Ice in the carafe, grams. Part of waterG, not additional to it. */
+  iceG?: number
   beanId?: Id
   /** Days off roast at brew time, frozen in so it survives the bean being edited. */
   daysOffRoast?: number
